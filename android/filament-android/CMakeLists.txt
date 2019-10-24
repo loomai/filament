@@ -70,6 +70,7 @@ add_library(filament-jni-obj OBJECT
     src/main/cpp/Scene.cpp
     src/main/cpp/SkyBox.cpp
     src/main/cpp/Stream.cpp
+    src/main/cpp/SurfaceOrientation.cpp
     src/main/cpp/Texture.cpp
     src/main/cpp/TextureSampler.cpp
     src/main/cpp/TransformManager.cpp

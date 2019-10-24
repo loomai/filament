@@ -5,6 +5,8 @@ A new header is inserted each time a *tag* is created.
 
 ## Next release
 
+- Added Java / Kotlin bindings for geometry::SurfaceOrientation.
+
 ## v1.4.5
 
 - The depth prepass setting in View is now ignored and deprecated.
