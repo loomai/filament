@@ -2,7 +2,7 @@ material {
     name : SolidRefraction,
     shadingModel : lit,
     refractionType : solid,
-    refractionMode : cubemap,
+    refractionMode : screenspace,
     parameters : [
         {
             type : float,

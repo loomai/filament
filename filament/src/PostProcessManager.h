@@ -62,12 +62,17 @@ public:
             backend::TextureFormat outFormat) noexcept;
 
     FrameGraphId <FrameGraphTexture> resolve(FrameGraph& fg,
-            const char* outputBufferName, FrameGraphId <FrameGraphTexture> input) noexcept;
+            const char* outputBufferName, uint8_t levels,
+            FrameGraphId <FrameGraphTexture> input) noexcept;
 
     FrameGraphId<FrameGraphTexture> ssao(FrameGraph& fg, details::RenderPass& pass,
             filament::Viewport const& svp,
             details::CameraInfo const& cameraInfo,
             View::AmbientOcclusionOptions const& options) noexcept;
+
+    FrameGraphId<FrameGraphTexture> gaussianBlurPass(FrameGraph& fg,
+            FrameGraphId<FrameGraphTexture> input, uint8_t srcLevel,
+            uint8_t dstLevel, float alpha) noexcept;
 
     backend::Handle<backend::HwTexture> getNoSSAOTexture() const {
         return mNoSSAOTexture;
@@ -82,7 +87,7 @@ private:
     FrameGraphId<FrameGraphTexture> mipmapPass(FrameGraph& fg,
             FrameGraphId<FrameGraphTexture> input, size_t level) noexcept;
 
-    FrameGraphId<FrameGraphTexture> blurPass(FrameGraph& fg,
+    FrameGraphId<FrameGraphTexture> bilateralBlurPass(FrameGraph& fg,
             FrameGraphId<FrameGraphTexture> input,
             FrameGraphId<FrameGraphTexture> depth, math::int2 axis) noexcept;
 
@@ -113,7 +118,8 @@ private:
 
     PostProcessMaterial mSSAO;
     PostProcessMaterial mMipmapDepth;
-    PostProcessMaterial mBlur;
+    PostProcessMaterial mBilateralBlur;
+    PostProcessMaterial mSeparableGaussianBlur;
     PostProcessMaterial mBlit;
     PostProcessMaterial mTonemapping;
     PostProcessMaterial mFxaa;

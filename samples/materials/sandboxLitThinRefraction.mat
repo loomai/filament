@@ -2,7 +2,7 @@ material {
     name : ThinRefraction,
     shadingModel : lit,
     refractionType : thin,
-    refractionMode : cubemap,
+    refractionMode : screenspace,
     parameters : [
         {
             type : float,

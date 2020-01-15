@@ -441,8 +441,9 @@ void applyRefraction(const PixelParams pixel,
     vec3 Ft = prefilteredRadiance(ray.direction, perceptualRoughness) * frameUniforms.iblLuminance;
 #else
     // compute the point where the ray exits the medium, if needed
-    vec4 p = vec4(frameUniforms.clipFromWorldMatrix * ray.position, 1.0);
-    vec3 Ft = vec3(0.0);    // TODO: sample screen-space at p
+    vec4 p = vec4(frameUniforms.clipFromWorldMatrix * vec4(ray.position, 1.0));
+    p.xy = uvToRenderTargetUV(p.xy * (0.5 / p.w) + 0.5);
+    vec3 Ft = textureLod(light_ssr, p.xy, perceptualRoughness * 4.0).rgb;
 #endif
 
     /* fresnel from the first interface */
