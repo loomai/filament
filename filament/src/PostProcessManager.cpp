@@ -684,7 +684,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::gaussianBlurPass(FrameGraph&
     // taking advantage of linear filtering produces a effective kernel of 17 samples
     // and because it's a separable filter, the effective 2D filter kernel size is 17*17
     // The total number of samples needed over the two passes is 18.
-    const size_t kMaxPositiveKernelSize = 15; // 29 samples passes
+    const size_t kMaxPositiveKernelSize = 87; // 29 samples passes
 
     Handle<HwRenderPrimitive> fullScreenRenderPrimitive = mEngine.getFullScreenRenderPrimitive();
 

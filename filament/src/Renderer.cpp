@@ -457,10 +457,34 @@ FrameGraphId<FrameGraphTexture> FRenderer::refractionPass(FrameGraph& fg,
         // Our gaussian filter shader supports a maximum kernel size of 57 (which is achieved
         // in 58 taps). 'alpha' is calculated as 18 / (kernel-size + 1)^2 (here 0.0053507).
         // e.g. with a kernel size of 17, alpha is 0.056
-        input = ppm.gaussianBlurPass(fg, input, 0, 1, 0.056); // effective 0.02
-        input = ppm.gaussianBlurPass(fg, input, 1, 2, 0.056); // effective 0.005
-        input = ppm.gaussianBlurPass(fg, input, 2, 3, 0.056); // effective 0.00125
-        input = ppm.gaussianBlurPass(fg, input, 3, 4, 0.056); // effective 0.0003125
+
+        // The gaussian kernel is e^(-alpha * x^2)
+        // and alpha = 1/roughness^2, with x between -pi/2 and pi/2
+
+        // assume
+        // - a half field-of-view or phi
+        // - a half resolution of r
+        // x=r must map to phi -> x' = x * phi / r
+        //
+        // -> alpha = phi/(r * roughness^2)
+
+        //roughness = linroughnes^2
+
+        // linear-roughness values 0 0.25 0.50 0.75 1.0
+
+        auto sq = [](float x) -> float { return x*x; };
+
+        float r = desc.width;
+        float phi = F_PI_2;     // assume 90deg field-of-view
+        float alpha1 = 0.06857; //sq(phi/r) / std::pow(0.0625f, 4);
+        float alpha2 = 0.01827; //sq(phi/r) / std::pow(0.125f, 4);
+        float alpha3 = 0.00456; //sq(phi/r) / std::pow(0.1875f, 4);
+        float alpha4 = 0.00114; //sq(phi/r) / std::pow(0.25f, 4);
+
+        input = ppm.gaussianBlurPass(fg, input, 0, 1, alpha1); // effective 0.02
+        input = ppm.gaussianBlurPass(fg, input, 1, 2, alpha2); // effective 0.005
+        input = ppm.gaussianBlurPass(fg, input, 2, 3, alpha3); // effective 0.00125
+        input = ppm.gaussianBlurPass(fg, input, 3, 4, alpha4); // effective 0.0003125
 
         struct PrepareSSRData {
             FrameGraphId<FrameGraphTexture> ssr;

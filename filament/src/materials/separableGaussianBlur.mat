@@ -24,11 +24,11 @@ material {
             name : count
         },
         {
-            type : float[15],
+            type : float[87],
             name : kernel
         },
         {
-            type : float[15],
+            type : float[87],
             name : offsets
         }
     ],
