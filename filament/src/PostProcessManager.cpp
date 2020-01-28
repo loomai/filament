@@ -680,6 +680,8 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::bilateralBlurPass(FrameGraph
 FrameGraphId<FrameGraphTexture> PostProcessManager::gaussianBlurPass(FrameGraph& fg,
         FrameGraphId<FrameGraphTexture> input, uint8_t srcLevel, uint8_t dstLevel, float alpha) noexcept {
 
+    // UBO storage size. Must be odd.
+    // The effective kernel size is (kMaxPositiveKernelSize - 1) * 4 + 1.
     // 5 positive-side samples, give 9 samples both sides
     // taking advantage of linear filtering produces a effective kernel of 17 samples
     // and because it's a separable filter, the effective 2D filter kernel size is 17*17
@@ -700,12 +702,13 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::gaussianBlurPass(FrameGraph&
         // clamp to what we have
         m = std::min(size, m);
 
-        coefs[0] = std::exp(-alpha);
+        coefs[0] = 1.0;
+        offsets[0] = 0.0;
         float totalWeight = coefs[0];
 
         for (size_t i = 1; i < m; i++) {
-            float x0 = i * 2;
-            float x1 = i * 2 + 1;
+            float x0 = i * 2 - 1;
+            float x1 = i * 2;
             float k0 = std::exp(-alpha * x0 * x0);
             float k1 = std::exp(-alpha * x1 * x1);
             float k = k0 + k1;
