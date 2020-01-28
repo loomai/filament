@@ -17,8 +17,8 @@
 #ifndef TNT_PLATFORMRUNNER_H
 #define TNT_PLATFORMRUNNER_H
 
-#include <stdint.h>
-#include <stddef.h>
+#include <cstdint>
+#include <cstddef>
 
 namespace test {
 

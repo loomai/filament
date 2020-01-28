@@ -17,7 +17,7 @@
 #ifndef TNT_FILAMENT_DRIVER_VULKAN_PLATFORM_VK_COCOA_TOUCH_H
 #define TNT_FILAMENT_DRIVER_VULKAN_PLATFORM_VK_COCOA_TOUCH_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <backend/DriverEnums.h>
 #include "VulkanPlatform.h"

@@ -20,7 +20,7 @@
 
 #include <jni.h>
 
-#include <assert.h>
+#include <cassert>
 
 #include <string>
 #include <unordered_set>

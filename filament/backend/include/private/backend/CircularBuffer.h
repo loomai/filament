@@ -17,8 +17,8 @@
 #ifndef TNT_FILAMENT_DRIVER_CIRCULARBUFFER_H
 #define TNT_FILAMENT_DRIVER_CIRCULARBUFFER_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 #include <utils/compiler.h>
 

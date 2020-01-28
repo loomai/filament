@@ -26,7 +26,7 @@
 
 #include "RenderTargetResource.h"
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 namespace fg {

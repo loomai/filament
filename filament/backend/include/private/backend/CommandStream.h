@@ -207,7 +207,7 @@ class NoopCommand : public CommandBase {
         *next = static_cast<NoopCommand*>(self)->mNext;
     }
 public:
-    inline constexpr explicit NoopCommand(void* next) noexcept
+    inline explicit NoopCommand(void* next) noexcept
             : CommandBase(execute), mNext(size_t((char *)next - (char *)this)) { }
 };
 

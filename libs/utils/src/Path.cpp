@@ -33,7 +33,7 @@
 #endif
 
 
-#include <limits.h>
+#include <climits>
 #include <sys/stat.h>
 
 namespace utils {

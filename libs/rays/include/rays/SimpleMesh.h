@@ -17,8 +17,8 @@
 #ifndef RAYS_SIMPLEMESH_H
 #define RAYS_SIMPLEMESH_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 namespace filament {
 namespace rays {

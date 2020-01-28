@@ -17,8 +17,8 @@
 #ifndef TNT_UTILS_ENTITYMANAGER_H
 #define TNT_UTILS_ENTITYMANAGER_H
 
-#include <assert.h>
-#include <stdint.h>
+#include <cassert>
+#include <cstdint>
 
 #include <utils/Entity.h>
 

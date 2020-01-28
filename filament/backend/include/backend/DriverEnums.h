@@ -26,8 +26,8 @@
 
 #include <array>    // FIXME: STL headers are not allowed in public headers
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 namespace filament {
 /**

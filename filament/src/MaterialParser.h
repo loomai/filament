@@ -28,7 +28,7 @@
 #include <utils/compiler.h>
 #include <utils/CString.h>
 
-#include <inttypes.h>
+#include <cinttypes>
 
 namespace filaflat {
 class ChunkContainer;

@@ -24,7 +24,7 @@
 #include <smolv.h>
 #endif
 
-#include <assert.h>
+#include <cassert>
 
 using namespace filamat;
 

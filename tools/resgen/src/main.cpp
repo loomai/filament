@@ -25,6 +25,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <cstring>
 
 using namespace std;
 using namespace utils;
@@ -223,7 +224,7 @@ int main(int argc, char* argv[]) {
     ostringstream headerStream;
     headerStream << "#ifndef " << packagePrefix << "H_" << endl
             << "#define " << packagePrefix << "H_" << endl << endl
-            << "#include <stdint.h>" << endl << endl
+            << "#include <cstdint>" << endl << endl
             << "extern \"C\" {" << endl
             << "    extern const uint8_t " << package << "[];" << endl;
 
@@ -240,7 +241,7 @@ int main(int argc, char* argv[]) {
             cerr << "Unable to open " << xxdPath << endl;
             exit(1);
         }
-        xxdStream << "#include <stdint.h>\n\nconst uint8_t " << package << "[] = {\n";
+        xxdStream << "#include <cstdint>\n\nconst uint8_t " << package << "[] = {\n";
     }
 
     // Iterate through each input file and consume its contents.

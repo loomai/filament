@@ -18,10 +18,10 @@
   * This has been forked from SDL's vulkan_test by Sam Lantinga, and heavily modified.
   **********************************************************************************************/
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
 
 #include "SDL.h"
 #include "SDL_vulkan.h"

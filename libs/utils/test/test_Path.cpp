@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <limits.h>
+#include <climits>
 #include <gtest/gtest.h>
 
 #include <utils/Path.h>

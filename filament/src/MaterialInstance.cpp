@@ -28,7 +28,7 @@
 
 #include <utils/Log.h>
 
-#include <string.h>
+#include <cstring>
 
 using namespace filament::math;
 using namespace utils;

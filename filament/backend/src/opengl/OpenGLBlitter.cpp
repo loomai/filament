@@ -24,7 +24,7 @@
 
 #include <math/vec2.h>
 
-#include <assert.h>
+#include <cassert>
 
 using namespace filament::math;
 using namespace utils;

@@ -20,7 +20,7 @@
 #include <utils/compiler.h>
 #include <utils/Log.h>
 
-#include <assert.h>
+#include <cassert>
 
 namespace filament {
 namespace backend {

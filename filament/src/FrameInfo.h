@@ -30,7 +30,7 @@
 #include <thread>
 #include <vector>
 
-#include <assert.h>
+#include <cassert>
 #include <math/fast.h>
 
 // set EXTRA_TIMING_INFO to enable and print extra timing info about the render loop

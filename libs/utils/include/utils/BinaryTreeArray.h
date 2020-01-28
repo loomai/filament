@@ -21,8 +21,8 @@
 
 #include <type_traits>
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 namespace utils {
 

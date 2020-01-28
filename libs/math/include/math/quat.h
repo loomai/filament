@@ -23,7 +23,7 @@
 #include <math/vec4.h>
 #include <math/compiler.h>
 
-#include <stdint.h>
+#include <cstdint>
 #include <sys/types.h>
 
 namespace filament {

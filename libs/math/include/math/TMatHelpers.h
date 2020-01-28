@@ -26,8 +26,8 @@
 #include <iostream>         // for operator<<
 #include <iomanip>          // for std::setw
 
-#include <math.h>
-#include <stdint.h>
+#include <cmath>
+#include <cstdint>
 #include <sys/types.h>
 
 namespace filament {

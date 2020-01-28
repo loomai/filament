@@ -30,7 +30,7 @@
 
 #include <set>
 
-#include <assert.h>
+#include <cassert>
 
 
 namespace filament {

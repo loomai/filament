@@ -22,8 +22,8 @@
 #include <functional>
 #include <vector>
 
-#include <stdint.h>
-#include <stddef.h>
+#include <cstdint>
+#include <cstddef>
 
 namespace utils {
 class JobSystem;

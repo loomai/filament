@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include <ctype.h>
+#include <cctype>
 #include <private/filament/Variant.h>
 
 #include <filamat/Enums.h>

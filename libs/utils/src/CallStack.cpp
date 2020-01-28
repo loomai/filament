@@ -34,7 +34,7 @@
 #include <cxxabi.h>
 #endif
 
-#include <string.h>
+#include <cstring>
 
 #ifdef __EXCEPTIONS
 #include <stdexcept>

@@ -17,7 +17,7 @@
 #ifndef TNT_FILAMENT_VARIANT_H
 #define TNT_FILAMENT_VARIANT_H
 
-#include <stdint.h>
+#include <cstdint>
 #include <cstddef>
 
 namespace filament {

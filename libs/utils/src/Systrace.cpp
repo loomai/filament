@@ -21,9 +21,9 @@
 
 #include <cinttypes>
 
-#include <string.h>
+#include <cstring>
 
-#include <errno.h>
+#include <cerrno>
 #include <fcntl.h>
 #include <pthread.h>
 

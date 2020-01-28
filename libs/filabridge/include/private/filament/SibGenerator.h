@@ -20,8 +20,8 @@
 #include <private/filament/EngineEnums.h>
 #include <backend/DriverEnums.h>
 
-#include <stdint.h>
-#include <stddef.h>
+#include <cstdint>
+#include <cstddef>
 
 namespace filament {
 

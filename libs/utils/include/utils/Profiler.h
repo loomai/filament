@@ -17,9 +17,9 @@
 #ifndef TNT_UTILS_PROFILER_H
 #define TNT_UTILS_PROFILER_H
 
-#include <assert.h>
-#include <stdint.h>
-#include <string.h>
+#include <cassert>
+#include <cstdint>
+#include <cstring>
 
 #include <chrono>   // note: This is safe (only used inline)
 

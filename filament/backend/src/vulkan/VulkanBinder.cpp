@@ -295,13 +295,13 @@ void VulkanBinder::bindProgramBundle(const ProgramBundle& bundle) noexcept {
 }
 
 void VulkanBinder::bindRasterState(const RasterState& rasterState) noexcept {
-    VkPipelineRasterizationStateCreateInfo& raster0 = mPipelineKey.rasterState.rasterization;
+    const VkPipelineRasterizationStateCreateInfo& raster0 = mPipelineKey.rasterState.rasterization;
     const VkPipelineRasterizationStateCreateInfo& raster1 = rasterState.rasterization;
-    VkPipelineColorBlendAttachmentState& blend0 = mPipelineKey.rasterState.blending;
+    const VkPipelineColorBlendAttachmentState& blend0 = mPipelineKey.rasterState.blending;
     const VkPipelineColorBlendAttachmentState& blend1 = rasterState.blending;
-    VkPipelineDepthStencilStateCreateInfo& ds0 = mPipelineKey.rasterState.depthStencil;
+    const VkPipelineDepthStencilStateCreateInfo& ds0 = mPipelineKey.rasterState.depthStencil;
     const VkPipelineDepthStencilStateCreateInfo& ds1 = rasterState.depthStencil;
-    VkPipelineMultisampleStateCreateInfo& ms0 = mPipelineKey.rasterState.multisampling;
+    const VkPipelineMultisampleStateCreateInfo& ms0 = mPipelineKey.rasterState.multisampling;
     const VkPipelineMultisampleStateCreateInfo& ms1 = rasterState.multisampling;
     if (
             raster0.polygonMode != raster1.polygonMode ||
@@ -340,22 +340,20 @@ void VulkanBinder::bindPrimitiveTopology(VkPrimitiveTopology topology) noexcept 
 
 void VulkanBinder::bindVertexArray(const VertexArray& varray) noexcept {
     for (size_t i = 0; i < VERTEX_ATTRIBUTE_COUNT; i++) {
-        VkVertexInputAttributeDescription& attrib0 = mPipelineKey.vertexAttributes[i];
         const VkVertexInputAttributeDescription& attrib1 = varray.attributes[i];
-        if (attrib1.location != attrib0.location || attrib1.binding != attrib0.binding ||
-                attrib1.format != attrib0.format || attrib1.offset != attrib0.offset) {
-            attrib0.format = attrib1.format;
-            attrib0.binding = attrib1.binding;
-            attrib0.location = attrib1.location;
-            attrib0.offset = attrib1.offset;
+        if (attrib1.location != mPipelineKey.vertexAttributes[i].location || attrib1.binding != mPipelineKey.vertexAttributes[i].binding ||
+                attrib1.format != mPipelineKey.vertexAttributes[i].format || attrib1.offset != mPipelineKey.vertexAttributes[i].offset) {
+            mPipelineKey.vertexAttributes[i].format = attrib1.format;
+            mPipelineKey.vertexAttributes[i].binding = attrib1.binding;
+            mPipelineKey.vertexAttributes[i].location = attrib1.location;
+            mPipelineKey.vertexAttributes[i].offset = attrib1.offset;
             mDirtyPipeline = true;
         }
-        VkVertexInputBindingDescription& buffer0 = mPipelineKey.vertexBuffers[i];
         const VkVertexInputBindingDescription& buffer1 = varray.buffers[i];
-        if (buffer0.binding != buffer1.binding || buffer0.stride != buffer1.stride) {
-            buffer0.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-            buffer0.binding = buffer1.binding;
-            buffer0.stride = buffer1.stride;
+        if (mPipelineKey.vertexBuffers[i].binding != buffer1.binding || mPipelineKey.vertexBuffers[i].stride != buffer1.stride) {
+            mPipelineKey.vertexBuffers[i].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            mPipelineKey.vertexBuffers[i].binding = buffer1.binding;
+            mPipelineKey.vertexBuffers[i].stride = buffer1.stride;
             mDirtyPipeline = true;
         }
     }
@@ -384,9 +382,9 @@ void VulkanBinder::unbindUniformBuffer(VkBuffer uniformBuffer) noexcept {
 }
 
 void VulkanBinder::unbindImageView(VkImageView imageView) noexcept {
-    for (auto& sampler : mDescriptorKey.samplers) {
-        if (sampler.imageView == imageView) {
-            sampler = {
+    for (auto i = 0; i < SAMPLER_BINDING_COUNT; i++) {
+        if (mDescriptorKey.samplers[i].imageView == imageView) {
+            mDescriptorKey.samplers[i] = VkDescriptorImageInfo{
                 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
             };
             mDirtyDescriptor = true;
@@ -443,10 +441,9 @@ void VulkanBinder::bindSampler(uint32_t bindingIndex, VkDescriptorImageInfo samp
     ASSERT_POSTCONDITION(bindingIndex < SAMPLER_BINDING_COUNT,
             "Sampler bindings overflow: index = %d, capacity = %d.",
             bindingIndex, SAMPLER_BINDING_COUNT);
-    VkDescriptorImageInfo& imageInfo = mDescriptorKey.samplers[bindingIndex];
-    if (imageInfo.sampler != samplerInfo.sampler || imageInfo.imageView != samplerInfo.imageView ||
-        imageInfo.imageLayout != samplerInfo.imageLayout) {
-        imageInfo = samplerInfo;
+    if (mDescriptorKey.samplers[bindingIndex].sampler != samplerInfo.sampler || mDescriptorKey.samplers[bindingIndex].imageView != samplerInfo.imageView ||
+        mDescriptorKey.samplers[bindingIndex].imageLayout != samplerInfo.imageLayout) {
+        mDescriptorKey.samplers[bindingIndex] = samplerInfo;
         mDirtyDescriptor = true;
     }
 }

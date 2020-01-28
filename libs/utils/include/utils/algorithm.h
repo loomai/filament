@@ -21,8 +21,8 @@
 
 #include <functional>
 
-#include <limits.h>
-#include <stdint.h>
+#include <climits>
+#include <cstdint>
 
 namespace utils {
 

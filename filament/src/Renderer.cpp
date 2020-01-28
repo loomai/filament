@@ -38,7 +38,7 @@
 #include <utils/Systrace.h>
 #include <utils/vector.h>
 
-#include <assert.h>
+#include <cassert>
 
 
 using namespace filament::math;
@@ -273,7 +273,7 @@ void FRenderer::renderJob(ArenaScope& arena, FView& view) {
 
     const Handle<HwRenderTarget> viewRenderTarget = getRenderTarget(view);
     FrameGraphRenderTargetHandle fgViewRenderTarget = fg.importRenderTarget("viewRenderTarget",
-            { .viewport = vp }, viewRenderTarget, vp.width, vp.height,
+                                                                            FrameGraphRenderTarget::Descriptor{ .viewport = vp }, viewRenderTarget, vp.width, vp.height,
             view.getDiscardedTargetBuffers());
 
     /*
@@ -335,16 +335,16 @@ void FRenderer::renderJob(ArenaScope& arena, FView& view) {
                 }
 
                 data.color = builder.createTexture("Color Buffer",
-                        { .width = svp.width, .height = svp.height, .format = hdrFormat });
+                                                   FrameGraphTexture::Descriptor{ .width = svp.width, .height = svp.height, .format = hdrFormat });
 
-                data.depth = builder.createTexture("Depth Buffer", {
+                data.depth = builder.createTexture("Depth Buffer", FrameGraphTexture::Descriptor{
                         .width = svp.width, .height = svp.height,
                         .format = TextureFormat::DEPTH24
                 });
                 data.depth = builder.write(builder.read(data.depth));
 
                 data.color = builder.write(builder.read(data.color));
-                data.rt = builder.createRenderTarget("Color Pass Target", {
+                data.rt = builder.createRenderTarget("Color Pass Target", FrameGraphRenderTarget::Descriptor{
                         .attachments = { data.color, data.depth },
                         .samples = msaa,
                 }, clearFlags);

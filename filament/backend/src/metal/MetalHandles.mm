@@ -23,7 +23,7 @@
 #include <utils/Panic.h>
 #include <utils/trap.h>
 
-#include <math.h>
+#include <cmath>
 
 namespace filament {
 namespace backend {

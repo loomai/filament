@@ -315,8 +315,10 @@ else()
         #        -fslp-vectorize-aggressive
         -fvisibility=hidden
         -fvisibility-inlines-hidden
-        -fstrict-vtable-pointers
     )
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        set(OPTIMIZATION_FLAGS ${OPTIMIZATION_FLAGS} -fstrict-vtable-pointers)
+    endif()
 endif()
 
 set(LINUX_LINKER_OPTIMIZATION_FLAGS
@@ -329,7 +331,7 @@ set(LINUX_COMPILER_FLAGS
 
 if (MSVC_NATIVE)
     set(FILAMENT_WARNINGS -W0)
-else()
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(FILAMENT_WARNINGS
             -Wextra -Wno-unused-parameter
             -Wextra-semi -Wnewline-eof -Wdeprecated -Wundef

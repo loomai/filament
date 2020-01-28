@@ -16,8 +16,9 @@
 
 #include <utils/Allocator.h>
 
-#include <stdlib.h>
-#include <assert.h>
+#include <cstdlib>
+#include <cassert>
+#include <cstring>
 
 #include <algorithm>
 

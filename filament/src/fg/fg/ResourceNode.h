@@ -18,7 +18,7 @@
 #define TNT_FILAMENT_FG_RESOURCENODE_H
 
 #include <limits>
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 namespace fg {

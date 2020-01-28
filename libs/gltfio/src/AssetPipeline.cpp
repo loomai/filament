@@ -542,33 +542,33 @@ const cgltf_data* Pipeline::flattenPrims(const cgltf_data* sourceAsset, uint32_t
 
         nodePointers[primIndex] = nodes + primIndex;
 
-        nodes[primIndex] = {
+        nodes[primIndex] = cgltf_node{
             .name = bakedPrim.sourceNode->name,
             .mesh = meshes + primIndex,
             .scale = {1.0f, 1.0f, 1.0f},
         };
 
-        meshes[primIndex] = {
+        meshes[primIndex] = cgltf_mesh{
             .name = bakedPrim.sourceMesh->name,
             .primitives = prims + primIndex,
             .primitives_count = 1,
         };
 
-        cgltf_accessor& indicesAccessor = *indicesAccessors++ = {
+        cgltf_accessor& indicesAccessor = *indicesAccessors++ = cgltf_accessor{
             .component_type = cgltf_component_type_r_32u,
             .type = cgltf_type_scalar,
             .count = bakedPrim.sourcePrimitive->indices->count,
             .stride = sizeof(uint32_t),
             .buffer_view = indicesViews,
         };
-        cgltf_buffer_view& indicesBufferView = *indicesViews++ = {
+        cgltf_buffer_view& indicesBufferView = *indicesViews++ = cgltf_buffer_view{
             .buffer = buffers,
             .offset = indicesOffset,
             .size = indicesAccessor.count * sizeof(uint32_t)
         };
         indicesOffset += indicesBufferView.size;
 
-        cgltf_accessor& positionsAccessor = *positionsAccessors++ = {
+        cgltf_accessor& positionsAccessor = *positionsAccessors++ = cgltf_accessor{
             .component_type = cgltf_component_type_r_32f,
             .type = cgltf_type_vec3,
             .count = bakedPrim.sourcePositions->data->count,
@@ -577,7 +577,7 @@ const cgltf_data* Pipeline::flattenPrims(const cgltf_data* sourceAsset, uint32_t
             .has_min = true,
             .has_max = true,
         };
-        cgltf_buffer_view& positionsBufferView = *positionsViews++ = {
+        cgltf_buffer_view& positionsBufferView = *positionsViews++ = cgltf_buffer_view{
             .buffer = buffers,
             .offset = positionsOffset,
             .size = positionsAccessor.count * sizeof(float3)
@@ -585,27 +585,27 @@ const cgltf_data* Pipeline::flattenPrims(const cgltf_data* sourceAsset, uint32_t
         positionsOffset += positionsBufferView.size;
         *((float3*) positionsAccessor.min) = bakedPrim.bakedMin;
         *((float3*) positionsAccessor.max) = bakedPrim.bakedMax;
-        cgltf_attribute& positionsAttribute = attributes[attrIndex++] = {
+        cgltf_attribute& positionsAttribute = attributes[attrIndex++] = cgltf_attribute{
             .name = (char*) POSITION,
             .type = cgltf_attribute_type_position,
             .data = &positionsAccessor
         };
 
         if (bakedPrim.bakedNormals) {
-            cgltf_accessor& normalsAccessor = *normalsAccessors++ = {
+            cgltf_accessor& normalsAccessor = *normalsAccessors++ = cgltf_accessor{
                 .component_type = cgltf_component_type_r_32f,
                 .type = cgltf_type_vec3,
                 .count = bakedPrim.sourceNormals->data->count,
                 .stride = sizeof(float3),
                 .buffer_view = normalsViews
             };
-            cgltf_buffer_view& normalsBufferView = *normalsViews++ = {
+            cgltf_buffer_view& normalsBufferView = *normalsViews++ = cgltf_buffer_view{
                 .buffer = buffers,
                 .offset = normalsOffset,
                 .size = normalsAccessor.count * sizeof(float3)
             };
             normalsOffset += normalsBufferView.size;
-            attributes[attrIndex++] = {
+            attributes[attrIndex++] = cgltf_attribute{
                 .name = (char*) NORMAL,
                 .type = cgltf_attribute_type_normal,
                 .data = &normalsAccessor
@@ -613,20 +613,20 @@ const cgltf_data* Pipeline::flattenPrims(const cgltf_data* sourceAsset, uint32_t
         }
 
         if (bakedPrim.bakedTangents) {
-            cgltf_accessor& tangentsAccessor = *tangentsAccessors++ = {
+            cgltf_accessor& tangentsAccessor = *tangentsAccessors++ = cgltf_accessor{
                 .component_type = cgltf_component_type_r_32f,
                 .type = cgltf_type_vec4,
                 .count = bakedPrim.sourceTangents->data->count,
                 .stride = sizeof(float4),
                 .buffer_view = tangentsViews
             };
-            cgltf_buffer_view& tangentsBufferView = *tangentsViews++ = {
+            cgltf_buffer_view& tangentsBufferView = *tangentsViews++ = cgltf_buffer_view{
                 .buffer = buffers,
                 .offset = tangentsOffset,
                 .size = tangentsAccessor.count * sizeof(float4)
             };
             tangentsOffset += tangentsBufferView.size;
-            attributes[attrIndex++] = {
+            attributes[attrIndex++] = cgltf_attribute{
                 .name = (char*) TANGENT,
                 .type = cgltf_attribute_type_tangent,
                 .data = &tangentsAccessor
@@ -645,7 +645,7 @@ const cgltf_data* Pipeline::flattenPrims(const cgltf_data* sourceAsset, uint32_t
             }
         }
 
-        prims[primIndex] = {
+        prims[primIndex] = cgltf_primitive{
             .type = cgltf_primitive_type_triangles,
             .indices = &indicesAccessor,
             .material = bakedPrim.sourcePrimitive->material,
@@ -1003,7 +1003,7 @@ cgltf_data* Pipeline::xatlasToCgltf(const cgltf_data* sourceAsset, const xatlas:
     cgltf_buffer* buffers = mStorage.buffers.alloc(1);
     uint8_t* resultData = mStorage.bufferData.alloc(resultBufferSize);
 
-    buffers[0] = {
+    buffers[0] = cgltf_buffer{
         .size = resultBufferSize,
         .data = resultData
     };
@@ -1132,13 +1132,13 @@ cgltf_data* Pipeline::xatlasToCgltf(const cgltf_data* sourceAsset, const xatlas:
                 continue;
             }
             const cgltf_accessor* sourceAccessor = attr.data;
-            *resultAttribute = {
+            *resultAttribute = cgltf_attribute{
                 .name = attr.name,
                 .type = attr.type,
                 .index = attr.index,
                 .data = resultAccessor
             };
-            *resultAccessor = {
+            *resultAccessor = cgltf_accessor{
                 .component_type = cgltf_component_type_r_32f,
                 .type = sourceAccessor->type,
                 .offset = offset,
@@ -1160,13 +1160,13 @@ cgltf_data* Pipeline::xatlasToCgltf(const cgltf_data* sourceAsset, const xatlas:
         }
 
         // Create the new attribute for the baked UV's and point it to its corresponding accessor.
-        *resultAttribute++ = {
+        *resultAttribute++ = cgltf_attribute{
             .name = (char*) gltfio::AssetPipeline::BAKED_UV_ATTRIB,
             .type = cgltf_attribute_type_texcoord,
             .index = gltfio::AssetPipeline::BAKED_UV_ATTRIB_INDEX,
             .data = resultAccessor
         };
-        *resultAccessor++ = {
+        *resultAccessor++ = cgltf_accessor{
             .component_type = cgltf_component_type_r_32f,
             .type = cgltf_type_vec2,
             .offset = offset,
@@ -1176,7 +1176,7 @@ cgltf_data* Pipeline::xatlasToCgltf(const cgltf_data* sourceAsset, const xatlas:
         };
 
         // Accessor for index buffer.
-        *resultAccessor++ = {
+        *resultAccessor++ = cgltf_accessor{
             .component_type = cgltf_component_type_r_32u,
             .type = cgltf_type_scalar,
             .count = atlasMesh.indexCount,
@@ -1418,7 +1418,7 @@ const cgltf_data* Pipeline::generatePreview(const cgltf_data* sourceAsset, const
     }
 
     // Create the new material, texture, and image.
-    materials[0] = {
+    materials[0] = cgltf_material{
         .name = (char*) PREVIEW_MATERIAL_NAME,
         .has_pbr_metallic_roughness = true,
         .has_pbr_specular_glossiness = false,
@@ -1441,8 +1441,8 @@ const cgltf_data* Pipeline::generatePreview(const cgltf_data* sourceAsset, const
 	    .double_sided = false,
 	    .unlit = true
     };
-    textures[0] = { .image = images };
-    images[0] = { .uri = pathString };
+    textures[0] = cgltf_texture{ .image = images };
+    images[0] = cgltf_image{ .uri = pathString };
     strncpy(pathString, texturePath.c_str(), texturePath.size() + 1);
 
     // Clone the high-level asset structure, then substitute some of the top-level lists.
@@ -1535,8 +1535,8 @@ const cgltf_data* Pipeline::replaceOcclusion(const cgltf_data* sourceAsset, cons
     // Populate the newly added texture and image.
     cgltf_texture& newTexture = textures[sourceAsset->textures_count];
     cgltf_image& newImage = images[sourceAsset->images_count];
-    newTexture = { .image = &newImage };
-    newImage = { .uri = pathString };
+    newTexture = cgltf_texture{ .image = &newImage };
+    newImage = cgltf_image{ .uri = pathString };
     strncpy(pathString, texturePath.c_str(), texturePath.size() + 1);
 
     // Clone the materials and update the texture pointers.

@@ -30,7 +30,7 @@
 // FIXME: could we get rid of <utility>
 #include <utility>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 

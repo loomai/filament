@@ -20,7 +20,7 @@
 #include <utils/compiler.h>
 #include <utils/CString.h>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filaflat {
 

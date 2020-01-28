@@ -35,7 +35,7 @@
 
 #include <functional>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 namespace backend {

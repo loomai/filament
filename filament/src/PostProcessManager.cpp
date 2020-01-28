@@ -185,7 +185,7 @@ FrameGraphId <FrameGraphTexture> PostProcessManager::toneMapping(FrameGraph& fg,
             [&](FrameGraph::Builder& builder, PostProcessToneMapping& data) {
                 auto const& inputDesc = fg.getDescriptor(input);
                 data.input = builder.sample(input);
-                data.output = builder.createTexture("tonemapping output", {
+                data.output = builder.createTexture("tonemapping output", FrameGraphTexture::Descriptor{
                         .width = inputDesc.width,
                         .height = inputDesc.height,
                         .format = outFormat
@@ -238,7 +238,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::fxaa(FrameGraph& fg,
             [&](FrameGraph::Builder& builder, PostProcessFXAA& data) {
                 auto const& inputDesc = fg.getDescriptor(input);
                 data.input = builder.sample(input);
-                data.output = builder.createTexture("fxaa output", {
+                data.output = builder.createTexture("fxaa output", FrameGraphTexture::Descriptor{
                         .width = inputDesc.width,
                         .height = inputDesc.height,
                         .format = outFormat
@@ -250,10 +250,10 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::fxaa(FrameGraph& fg,
                 auto const& texture = resources.getTexture(data.input);
 
                 FMaterialInstance* pInstance = mFxaa.getMaterialInstance();
-                pInstance->setParameter("colorBuffer", texture, {
-                        .filterMag = SamplerMagFilter::LINEAR,
-                        .filterMin = SamplerMinFilter::LINEAR
-                });
+                SamplerParams samplerParams{};
+                samplerParams.filterMag = SamplerMagFilter::LINEAR;
+                samplerParams.filterMin = SamplerMinFilter::LINEAR;
+                pInstance->setParameter("colorBuffer", texture, samplerParams);
 
                 pInstance->commit(driver);
 
@@ -299,10 +299,10 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::dynamicScaling(FrameGraph& f
 
                 data.input = builder.read(input);
                 FrameGraphRenderTarget::Descriptor d;
-                d.attachments.color = { data.input };
+                d.attachments.color() = { data.input };
                 data.srt = builder.createRenderTarget(builder.getName(data.input), d);
 
-                data.output = builder.createTexture("scaled output", {
+                data.output = builder.createTexture("scaled output", FrameGraphTexture::Descriptor{
                         .width = inputDesc.width,
                         .height = inputDesc.height,
                         .format = outFormat
@@ -324,7 +324,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::dynamicScaling(FrameGraph& f
 
                 data.input = builder.sample(input);
 
-                data.output = builder.createTexture("scaled output", {
+                data.output = builder.createTexture("scaled output", FrameGraphTexture::Descriptor{
                         .width = inputDesc.width,
                         .height = inputDesc.height,
                         .format = outFormat
@@ -338,10 +338,10 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::dynamicScaling(FrameGraph& f
                 auto out = resources.getRenderTarget(data.drt);
 
                 FMaterialInstance* const pInstance = mBlit.getMaterialInstance();
-                pInstance->setParameter("color", color, SamplerParams{
-                        .filterMag = SamplerMagFilter::LINEAR,
-                        .filterMin = SamplerMinFilter::LINEAR
-                });
+                SamplerParams samplerParams{};
+                samplerParams.filterMag = SamplerMagFilter::LINEAR;
+                samplerParams.filterMin = SamplerMinFilter::LINEAR;
+                pInstance->setParameter("color", color, samplerParams);
                 pInstance->commit(driver);
 
                 PipelineState pipeline;
@@ -406,7 +406,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::ssao(FrameGraph& fg, RenderP
                 auto const& desc = builder.getDescriptor(depth);
                 data.depth = builder.sample(depth);
 
-                data.ssao = builder.createTexture("SSAO Buffer", {
+                data.ssao = builder.createTexture("SSAO Buffer", FrameGraphTexture::Descriptor{
                         .width = desc.width, .height = desc.height,
                         .format = TextureFormat::R8 });
 
@@ -497,7 +497,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::depthPass(FrameGraph& fg, Re
     // SSAO generates its own depth pass at the requested resolution
     auto& ssaoDepthPass = fg.addPass<DepthPassData>("SSAO Depth Pass",
             [&](FrameGraph::Builder& builder, DepthPassData& data) {
-                data.depth = builder.createTexture("Depth Buffer", {
+                data.depth = builder.createTexture("Depth Buffer", FrameGraphTexture::Descriptor{
                         .width = width, .height = height,
                         .levels = uint8_t(levelCount),
                         .format = TextureFormat::DEPTH24 });
@@ -506,7 +506,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::depthPass(FrameGraph& fg, Re
 
                 // nested designated initializers not in C++ standard: https://tinyurl.com/y6krwocx
                 FrameGraphRenderTarget::Descriptor d;
-                d.attachments.depth = data.depth;
+                d.attachments.depth() = data.depth;
                 data.rt = builder.createRenderTarget("SSAO Depth Target", d,
                                                      TargetBufferFlags::DEPTH);
             },
@@ -537,7 +537,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::mipmapPass(FrameGraph& fg,
                 data.in = builder.sample(input);
                 data.out = builder.write(data.in);
                 FrameGraphRenderTarget::Descriptor d;
-                d.attachments.depth = { data.out, uint8_t(level + 1) };
+                d.attachments.depth() = { data.out, uint8_t(level + 1) };
                 data.rt = builder.createRenderTarget(name, d);
             },
             [=](FrameGraphPassResources const& resources,
@@ -587,7 +587,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::blurPass(FrameGraph& fg,
                 data.input = builder.sample(input);
                 data.depth = builder.sample(depth);
 
-                data.blurred = builder.createTexture("Blurred output", {
+                data.blurred = builder.createTexture("Blurred output", FrameGraphTexture::Descriptor{
                         .width = desc.width, .height = desc.height, .format = desc.format });
 
                 // Here we use the depth test to skip pixels at infinity (i.e. the skybox)

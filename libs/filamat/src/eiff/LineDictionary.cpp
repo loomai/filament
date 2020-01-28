@@ -16,7 +16,7 @@
 
 #include "LineDictionary.h"
 
-#include <assert.h>
+#include <cassert>
 
 namespace filamat {
 

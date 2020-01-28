@@ -32,7 +32,7 @@
 #include <stb_image.h>
 
 #include <cmath>
-#include <stdint.h>
+#include <cstdint>
 
 #include "generated/resources/resources.h"
 

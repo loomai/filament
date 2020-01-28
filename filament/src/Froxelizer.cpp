@@ -33,7 +33,7 @@
 
 #include <algorithm>
 
-#include <stddef.h>
+#include <cstddef>
 
 using namespace filament::math;
 using namespace utils;
@@ -103,8 +103,8 @@ Froxelizer::Froxelizer(FEngine& engine)
     // RecordBuffer cannot be larger than 65536 entries, because indices are uint16_t
     GPUBuffer::ElementType type = std::is_same<RecordBufferType, uint8_t>::value
                                   ? GPUBuffer::ElementType::UINT8 : GPUBuffer::ElementType::UINT16;
-    mRecordsBuffer = GPUBuffer(driverApi, { type, 1 }, RECORD_BUFFER_WIDTH, RECORD_BUFFER_HEIGHT);
-    mFroxelBuffer  = GPUBuffer(driverApi, { GPUBuffer::ElementType::UINT16, 2 },
+    mRecordsBuffer = GPUBuffer(driverApi, GPUBuffer::Element{ type, 1 }, RECORD_BUFFER_WIDTH, RECORD_BUFFER_HEIGHT);
+    mFroxelBuffer  = GPUBuffer(driverApi, GPUBuffer::Element{ GPUBuffer::ElementType::UINT16, 2 },
             FROXEL_BUFFER_WIDTH, FROXEL_BUFFER_HEIGHT);
 }
 

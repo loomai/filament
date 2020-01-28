@@ -20,11 +20,12 @@
 
 #include "VulkanBuffer.h"
 #include "VulkanDriverFactory.h"
+#include "VulkanFboCache.h"
 #include "VulkanHandles.h"
 #include "VulkanPlatform.h"
 
-#include <utils/Panic.h>
 #include <utils/CString.h>
+#include <utils/Panic.h>
 #include <utils/trap.h>
 
 #include <set>
@@ -739,17 +740,17 @@ void VulkanDriver::beginRenderPass(Handle<HwRenderTarget> rth, const RenderPassP
         finalDepthLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     }
 
-    VkRenderPass renderPass = mFramebufferCache.getRenderPass({
+    VulkanFboCache::RenderPassKey renderPassKey {
         .finalColorLayout = finalColorLayout,
         .finalDepthLayout = finalDepthLayout,
         .colorFormat = color.format,
         .depthFormat = depth.format,
-        .flags = {
-            .clear = params.flags.clear,
-            .discardStart = params.flags.discardStart,
-            .discardEnd = params.flags.discardEnd
-        }
-    });
+    };
+    renderPassKey.flags.clear = params.flags.clear;
+    renderPassKey.flags.discardStart = params.flags.discardStart;
+    renderPassKey.flags.discardEnd = params.flags.discardEnd;
+    renderPassKey.flags.padding0 = 0;
+    VkRenderPass renderPass = mFramebufferCache.getRenderPass(renderPassKey);
     mBinder.bindRenderPass(renderPass);
 
     VulkanFboCache::FboKey fbo { .renderPass = renderPass };
@@ -1053,7 +1054,7 @@ void VulkanDriver::draw(PipelineState pipelineState, Handle<HwRenderPrimitive> r
 #endif
 
     // Update the VK raster state.
-    mContext.rasterState.depthStencil = {
+    mContext.rasterState.depthStencil = VkPipelineDepthStencilStateCreateInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
         .depthTestEnable = VK_TRUE,
         .depthWriteEnable = (VkBool32) rasterState.depthWrite,
@@ -1062,7 +1063,7 @@ void VulkanDriver::draw(PipelineState pipelineState, Handle<HwRenderPrimitive> r
         .stencilTestEnable = VK_FALSE,
     };
 
-    mContext.rasterState.blending = {
+    mContext.rasterState.blending = VkPipelineColorBlendAttachmentState{
         .blendEnable = (VkBool32) rasterState.hasBlending(),
         .srcColorBlendFactor = getBlendFactor(rasterState.blendFunctionSrcRGB),
         .dstColorBlendFactor = getBlendFactor(rasterState.blendFunctionDstRGB),

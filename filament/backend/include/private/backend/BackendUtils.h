@@ -16,7 +16,7 @@
 
 #include <backend/DriverEnums.h>
 
-#include <stddef.h>
+#include <cstddef>
 
 namespace filament {
 namespace backend {

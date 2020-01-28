@@ -31,7 +31,7 @@
 
 #include <math/vec4.h>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 namespace details {

@@ -17,7 +17,7 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
-#include <stdint.h>
+#include <cstdint>
 
 struct Projection {
 

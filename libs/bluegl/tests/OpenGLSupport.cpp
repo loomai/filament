@@ -16,8 +16,8 @@
 
 #include "OpenGLSupport.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include <iostream>
 #include <mutex>

@@ -17,7 +17,7 @@
 #ifndef TNT_UTILS_JOBSYSTEM_H
 #define TNT_UTILS_JOBSYSTEM_H
 
-#include <assert.h>
+#include <cassert>
 
 #include <atomic>
 #include <functional>

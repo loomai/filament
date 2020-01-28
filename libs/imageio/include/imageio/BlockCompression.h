@@ -26,7 +26,7 @@
 
 #include <math/vec2.h>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace image {
 

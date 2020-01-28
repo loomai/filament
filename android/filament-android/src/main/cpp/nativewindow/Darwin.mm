@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 
 #include <jawt.h>
 #include <darwin/jawt_md.h>

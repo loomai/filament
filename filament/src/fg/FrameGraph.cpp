@@ -94,7 +94,7 @@ FrameGraphRenderTargetHandle FrameGraph::Builder::createRenderTarget(FrameGraphI
         TargetBufferFlags clearFlags) noexcept {
     texture = this->write(texture);
     FrameGraphRenderTarget::Descriptor desc;
-    desc.attachments.color = texture;
+    desc.attachments.color() = texture;
     return createRenderTarget(getName(texture), desc, clearFlags);
 }
 
@@ -337,7 +337,7 @@ FrameGraphRenderTargetHandle FrameGraph::importRenderTarget(const char* name,
     // so we can do a moveResource() for instance.
     FrameGraphTexture::Descriptor desc{
             .width = width, .height = height, .usage = TextureUsage::COLOR_ATTACHMENT };
-    descriptor.attachments.color = import<FrameGraphTexture>(name, desc, {});
+    descriptor.attachments.color() = import<FrameGraphTexture>(name, desc, {});
 
     // create a fg::RenderTarget, so we can get an handle
     fg::RenderTarget& renderTarget = createRenderTarget(name, descriptor);

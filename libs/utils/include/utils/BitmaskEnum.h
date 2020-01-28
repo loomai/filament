@@ -21,9 +21,9 @@
 
 #include <type_traits> // for std::false_type
 
-#include <assert.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
 
 namespace utils {
 template<typename Enum>

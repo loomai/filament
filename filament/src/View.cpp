@@ -345,11 +345,10 @@ void FView::prepareLighting(FEngine& engine, FEngine::DriverApi& driver, ArenaSc
         u.setUniform(offsetof(PerViewUib, iblLuminance), ibl->getIntensity() * exposure);
         u.setUniformArray(offsetof(PerViewUib, iblSH), ibl->getSH(), 9);
         if (ibl->getReflectionMap()) {
-            mPerViewSb.setSampler(PerViewSib::IBL_SPECULAR, {
-                    ibl->getReflectionMap(), {
-                            .filterMag = SamplerMagFilter::LINEAR,
-                            .filterMin = SamplerMinFilter::LINEAR_MIPMAP_LINEAR
-                    }});
+            SamplerParams samplerParams{};
+            samplerParams.filterMag = SamplerMagFilter::LINEAR;
+            samplerParams.filterMin = SamplerMinFilter::LINEAR_MIPMAP_LINEAR;
+            mPerViewSb.setSampler(PerViewSib::IBL_SPECULAR, ibl->getReflectionMap(), samplerParams);
         }
     } else {
         FSkybox const* const skybox = scene->getSkybox();
@@ -636,9 +635,9 @@ void FView::prepareCamera(const CameraInfo& camera, const filament::Viewport& vi
 }
 
 void FView::prepareSSAO(Handle<HwTexture> ssao) const noexcept {
-    mPerViewSb.setSampler(PerViewSib::SSAO, ssao, {
-            .filterMag = SamplerMagFilter::LINEAR
-    });
+    SamplerParams samplerParams{};
+    samplerParams.filterMag = SamplerMagFilter::LINEAR;
+    mPerViewSb.setSampler(PerViewSib::SSAO, ssao, samplerParams);
 }
 
 void FView::cleanupSSAO() const noexcept {

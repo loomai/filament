@@ -17,7 +17,7 @@
 #ifndef UTILS_COUNTDOWNLATCH_H_
 #define UTILS_COUNTDOWNLATCH_H_
 
-#include <stddef.h>
+#include <cstddef>
 
 // note: we use our version of mutex/condition to keep this public header STL free
 #include <utils/Condition.h>

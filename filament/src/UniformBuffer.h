@@ -30,8 +30,8 @@
 #include <math/mat3.h>
 #include <math/mat4.h>
 
-#include <stddef.h>
-#include <assert.h>
+#include <cstddef>
+#include <cassert>
 
 
 namespace filament {

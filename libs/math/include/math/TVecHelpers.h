@@ -23,8 +23,8 @@
 #include <functional>       // for appl() and map()
 #include <iostream>         // for operator<<
 
-#include <math.h>
-#include <stdint.h>
+#include <cmath>
+#include <cstdint>
 #include <sys/types.h>
 
 namespace filament {

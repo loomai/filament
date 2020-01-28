@@ -18,8 +18,9 @@
 #define TNT_FILAMENT_SAMPLERGROUP_H
 
 #include <array>
-#include <stddef.h>
-#include <assert.h>
+#include <cstddef>
+#include <cassert>
+#include <memory>
 
 #include <utils/compiler.h>
 #include <utils/bitset.h>

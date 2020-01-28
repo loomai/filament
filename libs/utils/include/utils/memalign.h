@@ -19,9 +19,9 @@
 
 #include <type_traits>
 
-#include <assert.h>
-#include <stddef.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstddef>
+#include <cstdlib>
 
 #if defined(WIN32)
 #include <malloc.h>

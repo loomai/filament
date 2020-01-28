@@ -17,7 +17,7 @@
 #ifndef IBL_UTILITIES_H
 #define IBL_UTILITIES_H
 
-#include <math.h>
+#include <cmath>
 
 #include <math/vec2.h>
 #include <math/vec3.h>

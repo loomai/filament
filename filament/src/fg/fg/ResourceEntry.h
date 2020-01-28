@@ -19,7 +19,7 @@
 
 #include "VirtualResource.h"
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 

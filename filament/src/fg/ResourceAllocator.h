@@ -27,7 +27,7 @@
 
 #include <vector>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 namespace fg {

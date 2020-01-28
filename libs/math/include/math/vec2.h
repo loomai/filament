@@ -19,8 +19,8 @@
 
 #include <math/TVecHelpers.h>
 #include <math/half.h>
-#include <assert.h>
-#include <stdint.h>
+#include <cassert>
+#include <cstdint>
 #include <sys/types.h>
 #include <type_traits>
 

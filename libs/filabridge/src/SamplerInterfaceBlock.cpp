@@ -21,7 +21,7 @@
 
 #include <utility>
 
-#include <stdint.h>
+#include <cstdint>
 
 using namespace utils;
 

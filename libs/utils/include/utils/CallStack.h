@@ -17,8 +17,8 @@
 #ifndef UTILS_CALLSTACK_H_
 #define UTILS_CALLSTACK_H_
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 #include <typeinfo>
 
 #include <utils/CString.h>

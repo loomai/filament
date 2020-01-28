@@ -17,9 +17,9 @@
 #include <utils/ashmem.h>
 #include <utils/api_level.h>
 
-#include <errno.h>
-#include <assert.h>
-#include <stdio.h>
+#include <cerrno>
+#include <cassert>
+#include <cstdio>
 
 #include <utils/Path.h>
 

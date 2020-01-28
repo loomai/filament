@@ -98,10 +98,10 @@ TEST(FrameGraphTest, SimpleRenderPass2) {
 
                 data.outColor = builder.write(builder.read(data.outColor));
                 data.outDepth = builder.write(builder.read(data.outDepth));
-                data.rt = builder.createRenderTarget("rt", {
-                        .attachments.color = data.outColor,
-                        .attachments.depth = data.outDepth
-                });
+                FrameGraphRenderTarget::Descriptor descriptor{};
+                descriptor.attachments.color() = data.outColor;
+                descriptor.attachments.depth() = data.outDepth;
+                data.rt = builder.createRenderTarget("rt", descriptor);
 
                 EXPECT_TRUE(fg.isValid(data.outColor));
                 EXPECT_TRUE(fg.isValid(data.outDepth));
@@ -146,9 +146,9 @@ TEST(FrameGraphTest, ScenarioDepthPrePass) {
                 inputDesc.format = TextureFormat::DEPTH24;
                 data.outDepth = builder.createTexture("depth buffer", inputDesc);
                 data.outDepth = builder.write(builder.read(data.outDepth));
-                data.rt = builder.createRenderTarget("rt depth", {
-                        .attachments.depth = data.outDepth
-                });
+                FrameGraphRenderTarget::Descriptor descriptor{};
+                descriptor.attachments.depth() = data.outDepth;
+                data.rt = builder.createRenderTarget("rt depth", descriptor);
                 EXPECT_TRUE(fg.isValid(data.outDepth));
             },
             [=, &depthPrepassExecuted](
@@ -179,10 +179,10 @@ TEST(FrameGraphTest, ScenarioDepthPrePass) {
 
                 data.outColor = builder.write(builder.read(data.outColor));
                 data.outDepth = builder.write(builder.read(data.outDepth));
-                data.rt = builder.createRenderTarget("rt color+depth", {
-                        .attachments.color = data.outColor,
-                        .attachments.depth = data.outDepth
-                });
+                FrameGraphRenderTarget::Descriptor descriptor{};
+                descriptor.attachments.color() = data.outColor;
+                descriptor.attachments.depth() = data.outDepth;
+                data.rt = builder.createRenderTarget("rt color+depth", descriptor);
 
                 EXPECT_FALSE(fg.isValid(depthPrepass.getData().outDepth));
                 EXPECT_TRUE(fg.isValid(data.outColor));
@@ -340,9 +340,9 @@ TEST(FrameGraphTest, RenderTargetLifetime) {
     auto& renderPass2 = fg.addPass<RenderPassData>("Render2",
             [&](FrameGraph::Builder& builder, RenderPassData& data) {
                 data.output = builder.write(builder.read(renderPass1.getData().output));
-                data.rt = builder.createRenderTarget("color", {
-                        .attachments.color = { data.output }
-                }, (TargetBufferFlags)0x40);
+                FrameGraphRenderTarget::Descriptor descriptor{};
+                descriptor.attachments.color() = data.output;
+                data.rt = builder.createRenderTarget("color", descriptor, (TargetBufferFlags)0x40);
                 EXPECT_TRUE(fg.isValid(data.output));
             },
             [=, &rt1, &renderPassExecuted2](

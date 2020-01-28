@@ -17,8 +17,9 @@
 #ifndef TNT_UTILS_NAMECOMPONENTMANAGER_H
 #define TNT_UTILS_NAMECOMPONENTMANAGER_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 
 #include <utils/compiler.h>
 #include <utils/Entity.h>

@@ -18,8 +18,8 @@
 #ifndef MATH_TQUATHELPERS_H_
 #define MATH_TQUATHELPERS_H_
 
-#include <math.h>
-#include <stdint.h>
+#include <cmath>
+#include <cstdint>
 #include <sys/types.h>
 
 #include <iostream>

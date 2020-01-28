@@ -21,7 +21,7 @@
 #include <backend/Handle.h>
 #include <filament/Viewport.h>
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <array>
 #include <limits>
@@ -137,17 +137,16 @@ struct Attachments {
     };
 
     constexpr Attachments() noexcept : textures{} {}
-    Attachments(AttachmentInfo c, AttachmentInfo d) noexcept : color(c), depth(d) {}
+    Attachments(AttachmentInfo c, AttachmentInfo d) noexcept : textures{c, d} {}
 
     enum { COLOR = 0, DEPTH = 1 };
     static constexpr size_t COUNT = 2;
-    union {
-        std::array<AttachmentInfo, COUNT> textures = {};
-        struct {
-            AttachmentInfo color;
-            AttachmentInfo depth;
-        };
-    };
+    std::array<AttachmentInfo, COUNT> textures = {};
+
+    AttachmentInfo& color() { return textures[COLOR]; }
+    AttachmentInfo const& color() const { return textures[COLOR]; }
+    AttachmentInfo& depth() { return textures[DEPTH]; }
+    AttachmentInfo const& depth() const { return textures[DEPTH]; }
 };
 
 struct Descriptor {

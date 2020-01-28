@@ -19,8 +19,8 @@
 
 #include <atomic>
 
-#include <assert.h>
-#include <stddef.h>
+#include <cassert>
+#include <cstddef>
 
 namespace utils {
 

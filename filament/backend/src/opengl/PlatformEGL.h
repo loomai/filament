@@ -17,7 +17,7 @@
 #ifndef TNT_FILAMENT_DRIVER_OPENGL_PLATFORM_EGL_H
 #define TNT_FILAMENT_DRIVER_OPENGL_PLATFORM_EGL_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>

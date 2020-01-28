@@ -23,7 +23,7 @@
 
 #include <utils/Path.h>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace gltfio {
 

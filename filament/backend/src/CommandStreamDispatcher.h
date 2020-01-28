@@ -26,7 +26,7 @@
 #include <cstddef>
 #include <utility>
 
-#include <stdint.h>
+#include <cstdint>
 
 #define DEBUG_LEVEL_NONE       0
 #define DEBUG_LEVEL_SYSTRACE   1

@@ -17,8 +17,8 @@
 #ifndef TNT_FILAMENT_ENGINE_ENUM_H
 #define TNT_FILAMENT_ENGINE_ENUM_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 namespace filament {
 

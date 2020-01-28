@@ -17,7 +17,8 @@
 #ifndef TNT_MATH_HALF_H
 #define TNT_MATH_HALF_H
 
-#include <stdint.h>
+#include <cstdint>
+#include <cstddef>
 #include <limits>
 #include <type_traits>
 

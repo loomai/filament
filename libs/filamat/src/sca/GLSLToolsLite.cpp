@@ -18,7 +18,7 @@
 
 #include <filamat/Enums.h>
 
-#include <stdlib.h>
+#include <cstdlib>
 
 using namespace filament::backend;
 

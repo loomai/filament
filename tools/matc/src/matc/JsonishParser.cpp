@@ -16,7 +16,8 @@
 
 #include "JsonishParser.h"
 
-#include <stdlib.h>
+#include <cstdlib>
+#include <cstring>
 
 #include <iostream>
 

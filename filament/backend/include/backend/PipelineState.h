@@ -22,7 +22,7 @@
 
 #include <limits>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 namespace backend {

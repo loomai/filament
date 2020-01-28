@@ -24,9 +24,9 @@
 
 #include <tsl/robin_map.h>
 
-#include <assert.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
 
 namespace utils {
 

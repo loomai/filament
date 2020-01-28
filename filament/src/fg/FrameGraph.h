@@ -220,7 +220,7 @@ public:
     // Helper for aliasing a render target's color attachment
     template<typename T>
     FrameGraphId<T> moveResource(FrameGraphRenderTargetHandle from, FrameGraphId<T> to) {
-        return moveResource(getDescriptor(from).attachments.color.getHandle(), to);
+        return moveResource(getDescriptor(from).attachments.color().getHandle(), to);
     }
 
     // allocates concrete resources and culls unreferenced passes

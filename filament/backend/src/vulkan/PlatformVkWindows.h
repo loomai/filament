@@ -17,7 +17,7 @@
 #ifndef TNT_FILAMENT_DRIVER_VULKAN_PLATFORM_VK_WINDOWS_H
 #define TNT_FILAMENT_DRIVER_VULKAN_PLATFORM_VK_WINDOWS_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <backend/DriverEnums.h>
 #include "VulkanPlatform.h"

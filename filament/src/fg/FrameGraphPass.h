@@ -21,7 +21,7 @@
 
 #include <utils/Allocator.h>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 

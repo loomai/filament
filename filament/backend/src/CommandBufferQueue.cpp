@@ -16,7 +16,7 @@
 
 #include "private/backend/CommandBufferQueue.h"
 
-#include <assert.h>
+#include <cassert>
 
 #include <utils/Log.h>
 #include <utils/Systrace.h>

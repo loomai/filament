@@ -17,7 +17,7 @@
 #ifndef TNT_FILAMENT_DRIVER_DATARESHAPER_H
 #define TNT_FILAMENT_DRIVER_DATARESHAPER_H
 
-#include <stddef.h>
+#include <cstddef>
 
 namespace filament {
 namespace backend {

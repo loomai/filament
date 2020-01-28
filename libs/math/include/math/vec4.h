@@ -19,7 +19,7 @@
 
 #include <math/vec3.h>
 #include <math/half.h>
-#include <stdint.h>
+#include <cstdint>
 #include <sys/types.h>
 
 

@@ -644,7 +644,7 @@ bool FAssetLoader::createPrimitive(const cgltf_primitive* inPrim, Primitive* out
             continue;
         }
         if (inputAttribute.type == cgltf_attribute_type_normal) {
-            mResult->mBufferBindings.push_back({
+            mResult->mBufferBindings.push_back(gltfio::BufferBinding{
                 .uri = bv->buffer->uri,
                 .totalSize = uint32_t(bv->buffer->size),
                 .bufferIndex = uint8_t(slot++),
@@ -658,7 +658,7 @@ bool FAssetLoader::createPrimitive(const cgltf_primitive* inPrim, Primitive* out
             });
             continue;
         }
-        mResult->mBufferBindings.push_back({
+        mResult->mBufferBindings.push_back(gltfio::BufferBinding{
             .uri = bv->buffer->uri,
             .totalSize = uint32_t(bv->buffer->size),
             .bufferIndex = uint8_t(slot++),
@@ -682,7 +682,7 @@ bool FAssetLoader::createPrimitive(const cgltf_primitive* inPrim, Primitive* out
             const cgltf_accessor* inputAccessor = inputAttribute.data;
             const cgltf_buffer_view* bv = inputAccessor->buffer_view;
             if (inputAttribute.type == cgltf_attribute_type_normal) {
-                mResult->mBufferBindings.push_back({
+                mResult->mBufferBindings.push_back(gltfio::BufferBinding{
                     .uri = bv->buffer->uri,
                     .totalSize = uint32_t(bv->buffer->size),
                     .bufferIndex = uint8_t(slot++),
@@ -703,7 +703,7 @@ bool FAssetLoader::createPrimitive(const cgltf_primitive* inPrim, Primitive* out
                 continue;
             }
 
-            mResult->mBufferBindings.push_back({
+            mResult->mBufferBindings.push_back(gltfio::BufferBinding{
                 .uri = bv->buffer->uri,
                 .totalSize = uint32_t(bv->buffer->size),
                 .bufferIndex = uint8_t(slot++),
@@ -722,7 +722,7 @@ bool FAssetLoader::createPrimitive(const cgltf_primitive* inPrim, Primitive* out
     }
 
     if (needsDummyData) {
-        mResult->mBufferBindings.push_back({
+        mResult->mBufferBindings.push_back(gltfio::BufferBinding{
             .uri = "",
             .totalSize = uint32_t(sizeof(ubyte4) * vertexCount),
             .bufferIndex = uint8_t(slot++),
@@ -792,14 +792,14 @@ MaterialInstance* FAssetLoader::createMaterialInstance(const cgltf_material* inp
         .useSpecularGlossiness = false,
         .alphaMode = AlphaMode::OPAQUE,
         .enableDiagnostics = mDiagnosticsEnabled,
-        .hasMetallicRoughnessTexture = !!metallicRoughnessTexture.texture,
-        .metallicRoughnessUV = (uint8_t) metallicRoughnessTexture.texcoord,
         .baseColorUV = (uint8_t) baseColorTexture.texcoord,
         .emissiveUV = (uint8_t) inputMat->emissive_texture.texcoord,
         .aoUV = (uint8_t) inputMat->occlusion_texture.texcoord,
         .normalUV = (uint8_t) inputMat->normal_texture.texcoord,
         .hasTextureTransforms = hasTextureTransforms,
     };
+    matkey.hasMetallicRoughnessTexture = !!metallicRoughnessTexture.texture;
+    matkey.metallicRoughnessUV = (uint8_t) metallicRoughnessTexture.texcoord;
 
     if (inputMat->has_pbr_specular_glossiness) {
         matkey.useSpecularGlossiness = true;

@@ -19,9 +19,9 @@
 
 #include <utils/algorithm.h>
 
-#include <assert.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
 
 #include <algorithm>
 #include <type_traits>

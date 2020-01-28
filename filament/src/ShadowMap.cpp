@@ -135,13 +135,12 @@ void ShadowMap::prepare(DriverApi& driver, SamplerGroup& sb) noexcept {
             TargetBufferFlags::DEPTH, dim, dim, 1,
             {}, { mShadowMapHandle }, {});
 
-    sb.setSampler(PerViewSib::SHADOW_MAP, {
-        mShadowMapHandle, {
-                    .filterMag = SamplerMagFilter::LINEAR,
-                    .filterMin = SamplerMinFilter::LINEAR,
-                    .compareMode = SamplerCompareMode::COMPARE_TO_TEXTURE,
-                    .compareFunc = SamplerCompareFunc::LE
-            }});
+    SamplerParams samplerParams{};
+    samplerParams.filterMag = SamplerMagFilter::LINEAR;
+    samplerParams.filterMin = SamplerMinFilter::LINEAR;
+    samplerParams.compareMode = SamplerCompareMode::COMPARE_TO_TEXTURE;
+    samplerParams.compareFunc = SamplerCompareFunc::LE;
+    sb.setSampler(PerViewSib::SHADOW_MAP, mShadowMapHandle, samplerParams);
 }
 
 void ShadowMap::render(DriverApi& driver, RenderPass& pass, FView& view) noexcept {

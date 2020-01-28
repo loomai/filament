@@ -28,8 +28,8 @@
 
 #include <vector>
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 
 namespace filament {

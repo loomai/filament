@@ -16,6 +16,8 @@
 
 #include "JsonishLexer.h"
 
+#include <cstring>
+
 namespace matc {
 
 JsonType JsonishLexer::readIdentifier() noexcept {

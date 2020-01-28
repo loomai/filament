@@ -26,7 +26,7 @@
 
 #include <backend/PresentCallable.h>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 

@@ -17,7 +17,7 @@
 #ifndef TNT_FILAMAT_DIC_SPIRV_CHUNK_H
 #define TNT_FILAMAT_DIC_SPIRV_CHUNK_H
 
-#include <stdint.h>
+#include <cstdint>
 #include <vector>
 
 #include "Chunk.h"

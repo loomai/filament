@@ -22,8 +22,8 @@
 #include <math/vec3.h>
 #include <math/compiler.h>
 
-#include <limits.h>
-#include <stdint.h>
+#include <climits>
+#include <cstdint>
 #include <sys/types.h>
 
 namespace filament {

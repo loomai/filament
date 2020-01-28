@@ -17,7 +17,7 @@
 #ifndef TNT_FILAMENT_DRIVER_VULKANDRIVERFACTORY_H
 #define TNT_FILAMENT_DRIVER_VULKANDRIVERFACTORY_H
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 

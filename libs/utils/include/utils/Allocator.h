@@ -27,9 +27,9 @@
 #include <mutex>
 #include <type_traits>
 
-#include <assert.h>
-#include <stddef.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstddef>
+#include <cstdlib>
 
 namespace utils {
 

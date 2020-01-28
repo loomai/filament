@@ -23,7 +23,7 @@
 #include <math/fast.h>
 #include <math/scalar.h>
 
-#include <assert.h>
+#include <cassert>
 
 using namespace filament::math;
 using namespace utils;

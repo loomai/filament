@@ -25,7 +25,7 @@
 
 #include <utils/linux/Mutex.h>
 
-#include <time.h>
+#include <ctime>
 
 namespace utils {
 

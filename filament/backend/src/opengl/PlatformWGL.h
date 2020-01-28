@@ -17,7 +17,7 @@
 #ifndef TNT_FILAMENT_DRIVER_OPENGL_PLATFORM_WGL_H
 #define TNT_FILAMENT_DRIVER_OPENGL_PLATFORM_WGL_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <windows.h>
 #include <utils/unwindows.h>

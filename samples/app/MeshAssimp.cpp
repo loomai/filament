@@ -27,8 +27,8 @@
 
 #include "MeshAssimp.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include <array>
 
@@ -753,7 +753,7 @@ bool MeshAssimp::setFromFile(Asset& asset, std::map<std::string, MaterialInstanc
             float3 aabbMin = transformedAabb.getMin();
             float3 aabbMax = transformedAabb.getMax();
 
-            if (!isinf(aabbMin.x) && !isinf(aabbMax.x)) {
+            if (!std::isinf(aabbMin.x) && !std::isinf(aabbMax.x)) {
                 if (minBound.x > maxBound.x) {
                     minBound.x = aabbMin.x;
                     maxBound.x = aabbMax.x;
@@ -763,7 +763,7 @@ bool MeshAssimp::setFromFile(Asset& asset, std::map<std::string, MaterialInstanc
                 }
             }
 
-            if (!isinf(aabbMin.y) && !isinf(aabbMax.y)) {
+            if (!std::isinf(aabbMin.y) && !std::isinf(aabbMax.y)) {
                 if (minBound.y > maxBound.y) {
                     minBound.y = aabbMin.y;
                     maxBound.y = aabbMax.y;
@@ -773,7 +773,7 @@ bool MeshAssimp::setFromFile(Asset& asset, std::map<std::string, MaterialInstanc
                 }
             }
 
-            if (!isinf(aabbMin.z) && !isinf(aabbMax.z)) {
+            if (!std::isinf(aabbMin.z) && !std::isinf(aabbMax.z)) {
                 if (minBound.z > maxBound.z) {
                     minBound.z = aabbMin.z;
                     maxBound.z = aabbMax.z;

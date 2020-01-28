@@ -19,7 +19,7 @@
 #include <direct.h>
 #include <Strsafe.h>
 #include <sys/stat.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <windows.h>
 #include <shlwapi.h>
 

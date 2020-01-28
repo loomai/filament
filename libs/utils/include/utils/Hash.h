@@ -19,8 +19,8 @@
 
 #include <functional>   // for std::hash
 
-#include <stdint.h>
-#include <stddef.h>
+#include <cstdint>
+#include <cstddef>
 
 namespace utils {
 namespace hash {

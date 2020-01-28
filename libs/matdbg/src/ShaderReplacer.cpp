@@ -23,6 +23,7 @@
 #include <tsl/robin_map.h>
 
 #include <sstream>
+#include <cstring>
 
 namespace filament {
 namespace matdbg {

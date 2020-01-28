@@ -22,7 +22,7 @@
 #include <array>
 #include <cstdlib>
 
-#include <stdlib.h>
+#include <cstdlib>
 
 using namespace utils;
 

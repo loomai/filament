@@ -17,7 +17,7 @@
 #ifndef TNT_UTILS_ASHMEM_H
 #define TNT_UTILS_ASHMEM_H
 
-#include <stddef.h>
+#include <cstddef>
 
 namespace utils {
 

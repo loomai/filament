@@ -20,8 +20,8 @@
 #include <algorithm>
 #include <atomic>
 
-#include <assert.h>
-#include <stddef.h>
+#include <cassert>
+#include <cstddef>
 
 #include <utils/compiler.h>
 

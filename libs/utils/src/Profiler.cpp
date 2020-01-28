@@ -16,8 +16,8 @@
 
 #include <utils/Profiler.h>
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #if !defined(WIN32)
 #   include <unistd.h>

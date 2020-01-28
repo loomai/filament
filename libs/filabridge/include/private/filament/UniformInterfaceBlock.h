@@ -26,7 +26,7 @@
 
 #include <tsl/robin_map.h>
 
-#include <assert.h>
+#include <cassert>
 #include <vector>
 
 namespace filament {

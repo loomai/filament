@@ -22,8 +22,8 @@
 #include <atomic>
 #include <type_traits>
 
-#include <assert.h>
-#include <stddef.h>
+#include <cassert>
+#include <cstddef>
 
 namespace utils {
 

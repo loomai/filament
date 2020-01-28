@@ -25,7 +25,7 @@
 #include <math/vec3.h>
 #include <math/vec4.h>
 
-#include <stdint.h>
+#include <cstdint>
 #include <sys/types.h>
 #include <limits>
 

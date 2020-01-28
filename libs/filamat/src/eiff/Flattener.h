@@ -19,10 +19,10 @@
 
 #include <utils/Panic.h>
 
-#include <assert.h>
+#include <cassert>
 #include <map>
-#include <stdint.h>
-#include <string.h>
+#include <cstdint>
+#include <cstring>
 #include <vector>
 
 #include "filamat/Package.h"

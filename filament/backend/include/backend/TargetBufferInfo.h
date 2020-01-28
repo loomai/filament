@@ -20,7 +20,7 @@
 #include <backend/DriverEnums.h>
 #include <backend/Handle.h>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace filament {
 namespace backend {

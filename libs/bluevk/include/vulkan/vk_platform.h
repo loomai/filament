@@ -80,7 +80,7 @@ extern "C"
     #define VKAPI_PTR
 #endif
 
-#include <stddef.h>
+#include <cstddef>
 
 #if !defined(VK_NO_STDINT_H)
     #if defined(_MSC_VER) && (_MSC_VER < 1600)
@@ -93,7 +93,7 @@ extern "C"
         typedef signed   __int64 int64_t;
         typedef unsigned __int64 uint64_t;
     #else
-        #include <stdint.h>
+        #include <cstdint>
     #endif
 #endif // !defined(VK_NO_STDINT_H)
 

@@ -16,8 +16,8 @@
 
 #include "UniformBuffer.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 using namespace filament::math;
 

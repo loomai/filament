@@ -24,7 +24,7 @@
 #    define HAS_MMAP 0
 #endif
 
-#include <stdio.h>
+#include <cstdio>
 
 #include <utils/ashmem.h>
 #include <utils/Log.h>

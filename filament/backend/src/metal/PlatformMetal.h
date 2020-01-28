@@ -17,7 +17,7 @@
 #ifndef TNT_FILAMENT_DRIVER_PLATFORM_METAL_H
 #define TNT_FILAMENT_DRIVER_PLATFORM_METAL_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <backend/DriverEnums.h>
 #include <backend/Platform.h>

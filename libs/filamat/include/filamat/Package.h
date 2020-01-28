@@ -17,9 +17,9 @@
 #ifndef TNT_FILAMAT_PACKAGE_H
 #define TNT_FILAMAT_PACKAGE_H
 
-#include <assert.h>
-#include <inttypes.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cinttypes>
+#include <cstdlib>
 
 #include <cstddef>
 #include <functional>

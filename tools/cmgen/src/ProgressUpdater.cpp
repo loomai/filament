@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <string>
 
-#include <signal.h>
+#include <csignal>
 
 static void moveCursorUp(size_t n) {
     std::cout << "\033[" << n << "F";

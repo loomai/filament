@@ -17,7 +17,7 @@
 #ifndef TNT_FILAMAT_MATERIAL_CHUNK_TYPES_H
 #define TNT_FILAMAT_MATERIAL_CHUNK_TYPES_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <utils/compiler.h>
 

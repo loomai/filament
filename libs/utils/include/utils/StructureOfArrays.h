@@ -22,9 +22,10 @@
 #include <functional>
 #include <utility>
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdlib.h>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 
 #include <utils/Allocator.h>
 #include <utils/compiler.h>

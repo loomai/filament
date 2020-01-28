@@ -20,7 +20,7 @@
 #include <math/TMatHelpers.h>
 #include <math/vec2.h>
 #include <math/compiler.h>
-#include <stdint.h>
+#include <cstdint>
 #include <sys/types.h>
 
 namespace filament {

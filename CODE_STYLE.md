@@ -158,8 +158,8 @@ private:
 #include <algorithm>
 #include <iostream>
 
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 ```
 
 ### Strings

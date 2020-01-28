@@ -28,8 +28,8 @@
 
 #include <atomic>
 
-#include <stdint.h>
-#include <stdio.h>
+#include <cstdint>
+#include <cstdio>
 #include <unistd.h>
 
 #include <utils/compiler.h>
