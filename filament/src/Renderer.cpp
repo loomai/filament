@@ -466,11 +466,10 @@ FrameGraphId<FrameGraphTexture> FRenderer::refractionPass(FrameGraph& fg,
         // in 58 taps). 'alpha' is calculated as 18 / (kernel-size + 1)^2 (here 0.0053507).
         // e.g. with a kernel size of 17, alpha is 0.056
 
-        float phi = F_PI_2;     // assume 90deg field-of-view
-        const float r = desc.width;
-
         // scale factor for the gaussian so it matches our resolution / FOV
-        const float s = pow2(phi / r);
+        auto const& p = view.getCamera().getProjectionMatrix();
+        const float fovy = 2.0f * std::atan(1.0f / (float)p[1][1]);
+        const float s = pow2(fovy / desc.height);
 
         // compute our gaussian parameter, alpha, for a given pereceptual roughness
         // The gaussian kernel is e^(-alpha * x^2)
