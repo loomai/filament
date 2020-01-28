@@ -443,7 +443,10 @@ void applyRefraction(const PixelParams pixel,
     // compute the point where the ray exits the medium, if needed
     vec4 p = vec4(frameUniforms.clipFromWorldMatrix * vec4(ray.position, 1.0));
     p.xy = uvToRenderTargetUV(p.xy * (0.5 / p.w) + 0.5);
-    vec3 Ft = textureLod(light_ssr, p.xy, perceptualRoughness * 4.0 * 2.0).rgb;
+
+    // Below is an approximation of log2(perceptualRoughness) + 5.0f;
+    float lod = perceptualRoughness * (16.7434 - 22.6197 * perceptualRoughness + 11.0611 * perceptualRoughness * perceptualRoughness);
+    vec3 Ft = textureLod(light_ssr, p.xy, lod).rgb;
 #endif
 
     /* fresnel from the first interface */

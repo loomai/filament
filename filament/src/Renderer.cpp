@@ -51,6 +51,14 @@ using namespace backend;
 
 namespace details {
 
+static constexpr float pow2(float x) noexcept {
+    return x * x;
+}
+
+static constexpr float pow4(float x) noexcept {
+    return pow2(pow2(x));
+}
+
 FRenderer::FRenderer(FEngine& engine) :
         mEngine(engine),
         mFrameSkipper(engine, 2),
@@ -406,7 +414,7 @@ void FRenderer::renderJob(ArenaScope& arena, FView& view) {
     fg.present(input);
     fg.moveResource(fgViewRenderTarget, input);
     fg.compile();
-    fg.export_graphviz(slog.d);
+    //fg.export_graphviz(slog.d);
     fg.execute(engine, driver);
 
     recordHighWatermark(pass.getCommandsHighWatermark());
@@ -458,33 +466,35 @@ FrameGraphId<FrameGraphTexture> FRenderer::refractionPass(FrameGraph& fg,
         // in 58 taps). 'alpha' is calculated as 18 / (kernel-size + 1)^2 (here 0.0053507).
         // e.g. with a kernel size of 17, alpha is 0.056
 
+        float phi = F_PI_2;     // assume 90deg field-of-view
+        const float r = desc.width;
+
+        // scale factor for the gaussian so it matches our resolution / FOV
+        const float s = pow2(phi / r);
+
+        // compute our gaussian parameter, alpha, for a given pereceptual roughness
         // The gaussian kernel is e^(-alpha * x^2)
         // and alpha = 1/roughness^2, with x between -pi/2 and pi/2
+        // with, roughness = perceptual_roughnes^2
+        const float alpha1 = s * (1.0f / pow4(0.0625f));    // mip 1
+        const float alpha2 = s * (1.0f / pow4(0.125f));     // mip 2
+        const float alpha3 = s * (1.0f / pow4(0.25f));      // mip 3
+        const float alpha4 = s * (1.0f / pow4(0.50f));      // mip 4
 
-        // assume
-        // - a half field-of-view or phi
-        // - a half resolution of r
-        // x=r must map to phi -> x' = x * phi / r
-        //
-        // -> alpha = phi/(r * roughness^2)
+        // this compute the alpha parameter of a gaussian that is applied on a base gaussian
+        // and for which the result of the convolution is given.
+        auto deconvolveGaussian = [](float baseAlpha, float convolvedAlpha) -> float {
+            return (baseAlpha * convolvedAlpha) / (baseAlpha - convolvedAlpha);
+        };
 
-        //roughness = linroughnes^2
-
-        // linear-roughness values 0 0.25 0.50 0.75 1.0
-
-        auto sq = [](float x) -> float { return x*x; };
-
-        float r = desc.width;
-        float phi = F_PI_2;     // assume 90deg field-of-view
-        float alpha1 = 0.06857; //sq(phi/r) / std::pow(0.0625f, 4);
-        float alpha2 = 0.01827; //sq(phi/r) / std::pow(0.125f, 4);
-        float alpha3 = 0.00456; //sq(phi/r) / std::pow(0.1875f, 4);
-        float alpha4 = 0.00114; //sq(phi/r) / std::pow(0.25f, 4);
-
-        input = ppm.gaussianBlurPass(fg, input, 0, 1, alpha1); // effective 0.02
-        input = ppm.gaussianBlurPass(fg, input, 1, 2, alpha2); // effective 0.005
-        input = ppm.gaussianBlurPass(fg, input, 2, 3, alpha3); // effective 0.00125
-        input = ppm.gaussianBlurPass(fg, input, 3, 4, alpha4); // effective 0.0003125
+        // LOD1, perceptual roughness = 0.0625, kernel size (2048/90deg) =  21
+        // LOD2, perceptual roughness = 0.125,  kernel size (2048/90deg) =  41
+        // LOD3, perceptual roughness = 0.25,   kernel size (2048/90deg) =  83
+        // LOD4, perceptual roughness = 0.5,    kernel size (2048/90deg) = 167 (storage of 43)
+        input = ppm.gaussianBlurPass(fg, input, 0, 1,  1 * alpha1);
+        input = ppm.gaussianBlurPass(fg, input, 1, 2,  4 * deconvolveGaussian(alpha1, alpha2));
+        input = ppm.gaussianBlurPass(fg, input, 2, 3, 16 * deconvolveGaussian(alpha2, alpha3));
+        input = ppm.gaussianBlurPass(fg, input, 3, 4, 64 * deconvolveGaussian(alpha3, alpha4));
 
         struct PrepareSSRData {
             FrameGraphId<FrameGraphTexture> ssr;
