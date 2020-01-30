@@ -96,7 +96,7 @@ OpenGLContext::OpenGLContext() noexcept {
         }
         initExtensionsGLES(major, minor, exts);
     } else if (GL41_HEADERS) {
-        if (major == 4 && minor >= 1) {
+        if (major == 3 && minor >= 3) {
             shaderModel = ShaderModel::GL_CORE_41;
         }
         initExtensionsGL(major, minor, exts);

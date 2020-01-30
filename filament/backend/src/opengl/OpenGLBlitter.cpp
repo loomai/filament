@@ -38,7 +38,7 @@ void main() {
 }
 )SHADER";
 
-static const char s_vertexGL[] = R"SHADER(#version 410 core
+static const char s_vertexGL[] = R"SHADER(#version 330 core
 in vec4 pos;
 void main() {
     gl_Position = pos;
@@ -55,7 +55,7 @@ void main() {
 }
 )SHADER";
 
-static const char s_fragmentGL[] = R"SHADER(#version 410 core
+static const char s_fragmentGL[] = R"SHADER(#version 330 core
 precision mediump float;
 uniform sampler2D sampler;
 out vec4 fragColor;

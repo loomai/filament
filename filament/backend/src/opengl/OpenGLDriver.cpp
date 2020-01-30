@@ -101,7 +101,7 @@ Driver* OpenGLDriver::create(
             }
         } else if (GL41_HEADERS) {
             // we require GL 4.1 headers and minimum version
-            if (UTILS_UNLIKELY(!((major == 4 && minor >= 1) || major > 4))) {
+            if (UTILS_UNLIKELY(!((major == 3 && minor >= 3) || major > 4))) {
                 PANIC_LOG("OpenGL 4.1 minimum needed (current %d.%d)", major, minor);
                 goto cleanup;
             }

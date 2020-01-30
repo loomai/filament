@@ -211,8 +211,8 @@ Driver* PlatformGLX::createDriver(void* const sharedGLContext) noexcept {
     }
 
     int contextAttribs[] = {
-            GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
-            GLX_CONTEXT_MINOR_VERSION_ARB, 1,
+            GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+            GLX_CONTEXT_MINOR_VERSION_ARB, 3,
             GL_NONE
     };
 

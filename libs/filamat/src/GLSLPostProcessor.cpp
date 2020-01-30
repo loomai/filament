@@ -52,7 +52,7 @@ static uint32_t shaderVersionFromModel(filament::backend::ShaderModel model) {
         case filament::backend::ShaderModel::GL_ES_30:
             return 300;
         case filament::backend::ShaderModel::GL_CORE_41:
-            return 410;
+            return 330;
     }
 }
 

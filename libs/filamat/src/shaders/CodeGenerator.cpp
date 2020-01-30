@@ -59,7 +59,7 @@ io::sstream& CodeGenerator::generateProlog(io::sstream& out, ShaderType type,
                 // supported in the OpenGL 4.1 GLSL profile.
                 out << "#version 450 core\n\n";
             } else {
-                out << "#version 410 core\n\n";
+                out << "#version 330 core\n\n";
             }
             break;
     }
