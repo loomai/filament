@@ -39,7 +39,7 @@
     #endif
 #elif defined(__linux__)
     #ifndef USE_EXTERNAL_GLES3
-        #include "opengl/PlatformGLX.h"
+        #include "opengl/PlatformLinuxEGL.h"
     #endif
     #if defined (FILAMENT_DRIVER_SUPPORTS_VULKAN)
         #include "vulkan/PlatformVkLinux.h"
@@ -117,7 +117,7 @@ DefaultPlatform* DefaultPlatform::create(Backend* backend) noexcept {
     #elif defined(__APPLE__)
         return new PlatformCocoaGL();
     #elif defined(__linux__)
-        return new PlatformGLX();
+        return new PlatformLinuxEGL();
     #elif defined(WIN32)
         return new PlatformWGL();
     #elif defined(__EMSCRIPTEN__)

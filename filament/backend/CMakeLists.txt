@@ -85,7 +85,7 @@ if (NOT USE_EXTERNAL_GLES3)
     elseif (WEBGL)
         list(APPEND SRCS src/opengl/PlatformWebGL.cpp)
     elseif (LINUX)
-        list(APPEND SRCS src/opengl/PlatformGLX.cpp)
+        list(APPEND SRCS src/opengl/PlatformLinuxEGL.cpp)
     elseif (WIN32)
         list(APPEND SRCS src/opengl/PlatformWGL.cpp)
     else()
@@ -204,7 +204,7 @@ if (FILAMENT_SUPPORTS_METAL)
 endif()
 
 if (LINUX)
-    target_link_libraries(${TARGET} PRIVATE dl)
+    target_link_libraries(${TARGET} PRIVATE dl EGL)
 endif()
 
 # ==================================================================================================
