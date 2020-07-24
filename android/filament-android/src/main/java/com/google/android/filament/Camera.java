@@ -195,7 +195,7 @@ public class Camera {
     /**
      * Sets the projection matrix from the field-of-view.
      *
-     * @param fovInDegrees  field-of-view in degrees from the camera center axis.
+     * @param fovInDegrees  full field-of-view in degrees.
      *                      0 < <code>fovInDegrees</code> < 180
      *
      * @param aspect        aspect ratio width/height. <code>aspect</code> > 0
@@ -226,9 +226,11 @@ public class Camera {
     }
 
     /**
-     * Sets the projection matrix from the focal length
+     * Sets the projection matrix from the focal length.
      *
-     * @param focalLength   lense's focal length in millimeters. <code>focalLength</code> > 0
+     * @param focalLength   lens's focal length in millimeters. <code>focalLength</code> > 0
+     *
+     * @param aspect        aspect ratio width/height. <code>aspect</code> > 0
      *
      * @param near          distance in world units from the camera to the near plane.
      *                      The near plane's position in view space is z = -<code>near</code>.
@@ -245,8 +247,8 @@ public class Camera {
      *                              for {@link Projection#ORTHO}.
      *
      */
-    public void setLensProjection(double focalLength, double near, double far) {
-        nSetLensProjection(getNativeObject(), focalLength, near, far);
+    public void setLensProjection(double focalLength, double aspect, double near, double far) {
+        nSetLensProjection(getNativeObject(), focalLength, aspect, near, far);
     }
 
     /**
@@ -272,6 +274,31 @@ public class Camera {
             double near, double far) {
         Asserts.assertMat4dIn(inMatrix);
         nSetCustomProjection(getNativeObject(), inMatrix, near, far);
+    }
+
+    /**
+     * Sets an additional matrix that scales the projection matrix.
+     *
+     * <p>This is useful to adjust the aspect ratio of the camera independent from its projection.
+     * First, pass an aspect of 1.0 to setProjection. Then set the scaling with the desired aspect
+     * ratio:<br>
+     *
+     * <code>
+     *     camera->setScaling(double4 {1.0, width / height, 1.0, 1.0});
+     * </code>
+     *
+     * By default, this is an identity matrix.
+     * </p>
+     *
+     * @param scaling     diagonal of the scaling matrix to be applied after the projection matrix.
+     *
+     * @see Camera#setProjection
+     * @see Camera#setLensProjection
+     * @see Camera#setCustomProjection
+     */
+    public void setScaling(@NonNull @Size(min = 4) double[] inScaling) {
+        Asserts.assertDouble4In(inScaling);
+        nSetScaling(getNativeObject(), inScaling);
     }
 
     /**
@@ -338,6 +365,20 @@ public class Camera {
     public double[] getProjectionMatrix(@Nullable @Size(min = 16) double[] out) {
         out = Asserts.assertMat4d(out);
         nGetProjectionMatrix(getNativeObject(), out);
+        return out;
+    }
+
+    /**
+     * Returns the scaling amount used to scale the projection matrix.
+     *
+     * @return the diagonal of the scaling matrix applied after the projection matrix.
+     *
+     * @see Camera#setScaling
+     */
+    @NonNull @Size(min = 4)
+    public double[] getScaling(@Nullable @Size(min = 4) double[] out) {
+        out = Asserts.assertDouble4(out);
+        nGetScaling(getNativeObject(), out);
         return out;
     }
 
@@ -517,13 +558,15 @@ public class Camera {
 
     private static native void nSetProjection(long nativeCamera, int projection, double left, double right, double bottom, double top, double near, double far);
     private static native void nSetProjectionFov(long nativeCamera, double fovInDegrees, double aspect, double near, double far, int fov);
-    private static native void nSetLensProjection(long nativeCamera, double focalLength, double near, double far);
+    private static native void nSetLensProjection(long nativeCamera, double focalLength, double aspect, double near, double far);
     private static native void nSetCustomProjection(long nativeCamera, double[] inMatrix, double near, double far);
+    private static native void nSetScaling(long nativeCamera, double[] inScaling);
     private static native void nSetModelMatrix(long nativeCamera, float[] in);
     private static native void nLookAt(long nativeCamera, double eyeX, double eyeY, double eyeZ, double centerX, double centerY, double centerZ, double upX, double upY, double upZ);
     private static native float nGetNear(long nativeCamera);
     private static native float nGetCullingFar(long nativeCamera);
     private static native void nGetProjectionMatrix(long nativeCamera, double[] out);
+    private static native void nGetScaling(long nativeCamera, double[] out);
     private static native void nGetModelMatrix(long nativeCamera, float[] out);
     private static native void nGetViewMatrix(long nativeCamera, float[] out);
     private static native void nGetPosition(long nativeCamera, float[] out);

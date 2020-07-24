@@ -24,12 +24,11 @@
 #include <utils/compiler.h>
 
 #include <stdint.h>
+#include <math/mathfwd.h>
 
 namespace filament {
 
-namespace details {
 class FSkybox;
-} // namespace details
 
 class Engine;
 class Texture;
@@ -122,6 +121,17 @@ public:
         Builder& intensity(float envIntensity) noexcept;
 
         /**
+         * Sets the skybox to a constant color. Default is opaque black.
+         *
+         * Ignored if an environment is set.
+         *
+         * @param color
+         *
+         * @return This Builder, for chaining calls.
+         */
+        Builder& color(math::float4 color) noexcept;
+
+        /**
          * Creates the Skybox object and returns a pointer to it.
          *
          * @param engine Reference to the filament::Engine to associate this Skybox with.
@@ -131,8 +141,10 @@ public:
         Skybox* build(Engine& engine);
 
     private:
-        friend class details::FSkybox;
+        friend class FSkybox;
     };
+
+    void setColor(math::float4 color) noexcept;
 
     /**
      * Sets bits in a visibility mask. By default, this is 0x1.

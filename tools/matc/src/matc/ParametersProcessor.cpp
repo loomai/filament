@@ -428,8 +428,28 @@ static bool processMultiBounceAO(MaterialBuilder& builder, const JsonishValue& v
     return true;
 }
 
+static bool processFramebufferFetch(MaterialBuilder& builder, const JsonishValue& value) {
+    if (value.toJsonBool()->getBool()) {
+        builder.enableFramebufferFetch();
+    }
+    return true;
+}
+
 static bool processSpecularAmbientOcclusion(MaterialBuilder& builder, const JsonishValue& value) {
-    builder.specularAmbientOcclusion(value.toJsonBool()->getBool());
+    static const std::unordered_map<std::string, MaterialBuilder::SpecularAmbientOcclusion> strToEnum {
+            { "none",        MaterialBuilder::SpecularAmbientOcclusion::NONE },
+            { "simple",      MaterialBuilder::SpecularAmbientOcclusion::SIMPLE },
+            { "bentNormals", MaterialBuilder::SpecularAmbientOcclusion::BENT_NORMALS },
+            // Backward compatibility
+            { "false",       MaterialBuilder::SpecularAmbientOcclusion::NONE },
+            { "true",        MaterialBuilder::SpecularAmbientOcclusion::SIMPLE },
+    };
+    auto jsonString = value.toJsonString();
+    if (!isStringValidEnum(strToEnum, jsonString->getString())) {
+        return logEnumIssue("specularAO", *jsonString, strToEnum);
+    }
+
+    builder.specularAmbientOcclusion(stringToEnum(strToEnum, jsonString->getString()));
     return true;
 }
 
@@ -475,7 +495,7 @@ static bool processRefractionMode(MaterialBuilder& builder, const JsonishValue& 
         return logEnumIssue("refraction", *jsonString, strToEnum);
     }
 
-    builder.materialRefraction(stringToEnum(strToEnum, jsonString->getString()));
+    builder.refractionMode(stringToEnum(strToEnum, jsonString->getString()));
     return true;
 }
 
@@ -489,7 +509,7 @@ static bool processRefractionType(MaterialBuilder& builder, const JsonishValue& 
         return logEnumIssue("refractionType", *jsonString, strToEnum);
     }
 
-    builder.materialRefractionType(stringToEnum(strToEnum, jsonString->getString()));
+    builder.refractionType(stringToEnum(strToEnum, jsonString->getString()));
     return true;
 }
 
@@ -556,10 +576,11 @@ ParametersProcessor::ParametersProcessor() {
     mParameters["clearCoatIorChange"]            = { &processClearCoatIorChange, Type::BOOL };
     mParameters["flipUV"]                        = { &processFlipUV, Type::BOOL };
     mParameters["multiBounceAmbientOcclusion"]   = { &processMultiBounceAO, Type::BOOL };
-    mParameters["specularAmbientOcclusion"]      = { &processSpecularAmbientOcclusion, Type::BOOL };
+    mParameters["specularAmbientOcclusion"]      = { &processSpecularAmbientOcclusion, Type::STRING };
     mParameters["domain"]                        = { &processDomain, Type::STRING };
     mParameters["refractionMode"]                = { &processRefractionMode, Type::STRING };
     mParameters["refractionType"]                = { &processRefractionType, Type::STRING };
+    mParameters["framebufferFetch"]              = { &processFramebufferFetch, Type::BOOL };
 }
 
 bool ParametersProcessor::process(MaterialBuilder& builder, const JsonishObject& jsonObject) {

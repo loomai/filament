@@ -179,7 +179,7 @@ TEST(FilamentTest, SkinningMath) {
 }
 
 TEST(FilamentTest, TransformManager) {
-    filament::details::FTransformManager tcm;
+    filament::FTransformManager tcm;
     EntityManager& em = EntityManager::get();
     std::array<Entity, 3> entities;
     em.create(entities.size(), entities.data());
@@ -624,7 +624,6 @@ TEST(FilamentTest, ColorConversion) {
 
 TEST(FilamentTest, FroxelData) {
     using namespace filament;
-    using namespace filament::details;
 
     FEngine* engine = FEngine::create();
 
@@ -688,8 +687,8 @@ TEST(FilamentTest, FroxelData) {
     LightManager::Instance instance = engine->getLightManager().getInstance(e);
 
     FScene::LightSoa lights;
-    lights.push_back({}, {}, {}, {}, {});   // first one is always skipped
-    lights.push_back(float4{ 0, 0, -5, 1 }, {}, instance, 1, {});
+    lights.push_back({}, {}, {}, {}, {}, {});   // first one is always skipped
+    lights.push_back(float4{ 0, 0, -5, 1 }, {}, instance, 1, {}, {});
 
     {
         froxelData.froxelizeLights(*engine, {}, lights);
@@ -698,9 +697,8 @@ TEST(FilamentTest, FroxelData) {
         // light straddles the "light near" plane
         size_t pointCount = 0;
         for (const auto& entry : froxelBuffer) {
-            EXPECT_LE(entry.pointLightCount, 1);
-            EXPECT_EQ(entry.spotLightCount, 0);
-            pointCount += entry.pointLightCount;
+            EXPECT_LE(entry.count, 1);
+            pointCount += entry.count;
         }
         EXPECT_GT(pointCount, 0);
     }
@@ -717,9 +715,8 @@ TEST(FilamentTest, FroxelData) {
         auto const& recordBuffer = froxelData.getRecordBufferUser();
         size_t pointCount = 0;
         for (const auto& entry : froxelBuffer) {
-            EXPECT_LE(entry.pointLightCount, 1);
-            EXPECT_EQ(entry.spotLightCount, 0);
-            pointCount += entry.pointLightCount;
+            EXPECT_LE(entry.count, 1);
+            pointCount += entry.count;
         }
         EXPECT_GT(pointCount, 0);
     }
@@ -730,7 +727,6 @@ TEST(FilamentTest, FroxelData) {
 }
 
 TEST(FilamentTest, Bones) {
-    using namespace ::filament::details;
 
     struct Shader {
         static mat3f normal(PerRenderableUibBone const& bone) noexcept {

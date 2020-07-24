@@ -19,6 +19,7 @@
 #endif
 
 #define saturate(x)        clamp(x, 0.0, 1.0)
+#define atan2(x, y)        atan(y, x)
 
 //------------------------------------------------------------------------------
 // Scalar operations
@@ -43,6 +44,10 @@ float sq(float x) {
     return x * x;
 }
 
+//------------------------------------------------------------------------------
+// Vector operations
+//------------------------------------------------------------------------------
+
 /**
  * Returns the maximum component of the specified vector.
  *
@@ -50,6 +55,41 @@ float sq(float x) {
  */
 float max3(const vec3 v) {
     return max(v.x, max(v.y, v.z));
+}
+
+/**
+ * Returns the minimum component of the specified vector.
+ *
+ * @public-api
+ */
+float min3(const vec3 v) {
+    return min(v.x, min(v.y, v.z));
+}
+
+//------------------------------------------------------------------------------
+// Trigonometry
+//------------------------------------------------------------------------------
+
+/**
+ * Approximates acos(x) with a max absolute error of 9.0x10^-3.
+ * Valid in the range -1..1.
+ */
+float acosFast(float x) {
+    // Lagarde 2014, "Inverse trigonometric functions GPU optimization for AMD GCN architecture"
+    // This is the approximation of degree 1, with a max absolute error of 9.0x10^-3
+    float y = abs(x);
+    float p = -0.1565827 * y + 1.570796;
+    p *= sqrt(1.0 - y);
+    return x >= 0.0 ? p : PI - p;
+}
+
+/**
+ * Approximates acos(x) with a max absolute error of 9.0x10^-3.
+ * Valid only in the range 0..1.
+ */
+float acosFastPositive(float x) {
+    float p = -0.1565827 * x + 1.570796;
+    return p * sqrt(1.0 - x);
 }
 
 //------------------------------------------------------------------------------

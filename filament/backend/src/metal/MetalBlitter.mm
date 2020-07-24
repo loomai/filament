@@ -31,7 +31,7 @@ namespace filament {
 namespace backend {
 namespace metal {
 
-static std::string functionLibrary (R"(
+static const char* functionLibrary = R"(
 #include <metal_stdlib>
 #include <simd/simd.h>
 
@@ -112,7 +112,7 @@ blitterFrag(VertexOut in [[stage_in]],
 #endif
     return out;
 }
-)");
+)";
 
 MetalBlitter::MetalBlitter(MetalContext& context) noexcept : mContext(context) { }
 
@@ -127,15 +127,15 @@ void MetalBlitter::blit(id<MTLCommandBuffer> cmdBuffer, const BlitArgs& args) {
     // necessary for that attachment.
     blitFastPath(cmdBuffer, blitColor, blitDepth, args);
 
+    if (!blitColor && !blitDepth) {
+        return;
+    }
+
     // If the destination is MSAA and we weren't able to use the fast path, report an error, as
     // blitting to a MSAA texture isn't supported through the "slow path" yet.
     ASSERT_PRECONDITION(args.destination.color.textureType != MTLTextureType2DMultisample &&
         args.destination.depth.textureType != MTLTextureType2DMultisample,
         "Blitting between MSAA render targets with differing pixel formats and/or regions is not supported.");
-
-    if (!blitColor && !blitDepth) {
-        return;
-    }
 
     MTLRenderPassDescriptor* descriptor = [MTLRenderPassDescriptor renderPassDescriptor];
 
@@ -161,8 +161,12 @@ void MetalBlitter::blit(id<MTLCommandBuffer> cmdBuffer, const BlitArgs& args) {
         .vertexFunction = getBlitVertexFunction(),
         .fragmentFunction = fragmentFunction,
         .vertexDescription = {},
-        .colorAttachmentPixelFormat =
-                blitColor ? args.destination.color.pixelFormat : MTLPixelFormatInvalid,
+        .colorAttachmentPixelFormat = {
+            blitColor ? args.destination.color.pixelFormat : MTLPixelFormatInvalid,
+            MTLPixelFormatInvalid,
+            MTLPixelFormatInvalid,
+            MTLPixelFormatInvalid
+        },
         .depthAttachmentPixelFormat =
                 blitDepth ? args.destination.depth.pixelFormat : MTLPixelFormatInvalid,
         .sampleCount = 1,
@@ -179,11 +183,13 @@ void MetalBlitter::blit(id<MTLCommandBuffer> cmdBuffer, const BlitArgs& args) {
         [encoder setFragmentTexture:args.source.depth atIndex:1];
     }
 
-    SamplerParams samplerState{
+    SamplerState s {
+        .samplerParams = {
             .filterMag = args.filter,
             .filterMin = static_cast<SamplerMinFilter>(args.filter)
+        }
     };
-    id<MTLSamplerState> sampler = mContext.samplerStateCache.getOrCreateState(samplerState);
+    id<MTLSamplerState> sampler = mContext.samplerStateCache.getOrCreateState(s);
     [encoder setFragmentSamplerState:sampler atIndex:0];
 
     MTLViewport viewport;
@@ -336,7 +342,7 @@ id<MTLFunction> MetalBlitter::compileFragmentFunction(BlitFunctionKey key) {
         macros[@"MSAA_DEPTH_SOURCE"] = @"1";
     }
     options.preprocessorMacros = macros;
-    NSString* objcSource = [NSString stringWithCString:functionLibrary.data()
+    NSString* objcSource = [NSString stringWithCString:functionLibrary
                                               encoding:NSUTF8StringEncoding];
     NSError* error = nil;
     id<MTLLibrary> library = [mContext.device newLibraryWithSource:objcSource
@@ -353,7 +359,7 @@ id<MTLFunction> MetalBlitter::getBlitVertexFunction() {
         return mVertexFunction;
     }
 
-    NSString* objcSource = [NSString stringWithCString:functionLibrary.data()
+    NSString* objcSource = [NSString stringWithCString:functionLibrary
                                               encoding:NSUTF8StringEncoding];
     NSError* error = nil;
     id<MTLLibrary> library = [mContext.device newLibraryWithSource:objcSource

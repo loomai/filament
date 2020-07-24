@@ -22,8 +22,6 @@
 
 namespace filament {
 
-using namespace details;
-
 struct IndexBuffer::BuilderDetails {
     uint32_t mIndexCount = 0;
     IndexType mIndexType = IndexType::UINT;
@@ -48,13 +46,10 @@ IndexBuffer::Builder& IndexBuffer::Builder::bufferType(IndexType indexType) noex
 }
 
 IndexBuffer* IndexBuffer::Builder::build(Engine& engine) {
-    FEngine::assertValid(engine, __PRETTY_FUNCTION__);
     return upcast(engine).createIndexBuffer(*this);
 }
 
 // ------------------------------------------------------------------------------------------------
-
-namespace details {
 
 FIndexBuffer::FIndexBuffer(FEngine& engine, const IndexBuffer::Builder& builder)
         : mIndexCount(builder->mIndexCount) {
@@ -74,13 +69,9 @@ void FIndexBuffer::setBuffer(FEngine& engine, BufferDescriptor&& buffer, uint32_
     engine.getDriverApi().updateIndexBuffer(mHandle, std::move(buffer), byteOffset);
 }
 
-} // namespace details
-
 // ------------------------------------------------------------------------------------------------
 // Trampoline calling into private implementation
 // ------------------------------------------------------------------------------------------------
-
-using namespace details;
 
 void IndexBuffer::setBuffer(Engine& engine,
         IndexBuffer::BufferDescriptor&& buffer, uint32_t byteOffset) {

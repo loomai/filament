@@ -91,7 +91,7 @@ public:
 
 protected:
     // Looks at platform and target API, then decides on shader models and output formats.
-    void prepare();
+    void prepare(bool vulkanSemantics);
 
     using ShaderModel = filament::backend::ShaderModel;
     Platform mPlatform = Platform::DESKTOP;
@@ -184,6 +184,7 @@ public:
     using Interpolation = filament::Interpolation;
     using VertexDomain = filament::VertexDomain;
     using TransparencyMode = filament::TransparencyMode;
+    using SpecularAmbientOcclusion = filament::SpecularAmbientOcclusion;
 
     using UniformType = filament::backend::UniformType;
     using SamplerType = filament::backend::SamplerType;
@@ -191,8 +192,20 @@ public:
     using SamplerPrecision = filament::backend::Precision;
     using CullingMode = filament::backend::CullingMode;
 
+    struct PreprocessorDefine {
+        std::string name;
+        std::string value;
+
+        PreprocessorDefine(const std::string& name, const std::string& value) :
+            name(name), value(value) {}
+    };
+    using PreprocessorDefineList = std::vector<PreprocessorDefine>;
+
     //! Set the name of this material.
     MaterialBuilder& name(const char* name) noexcept;
+
+    //! Set the file name of this material file. Used in error reporting.
+    MaterialBuilder& fileName(const char* name) noexcept;
 
     //! Set the shading model.
     MaterialBuilder& shading(Shading shading) noexcept;
@@ -235,12 +248,6 @@ public:
     //! Specify the domain that this material will operate in.
     MaterialBuilder& materialDomain(MaterialDomain materialDomain) noexcept;
 
-    //! Specify the refraction
-    MaterialBuilder& materialRefraction(RefractionMode refraction) noexcept;
-
-    //! Specify the refraction type
-    MaterialBuilder& materialRefractionType(RefractionType refractionType) noexcept;
-
     /**
      * Set the code content of this material.
      *
@@ -265,6 +272,10 @@ public:
      *     postProcess.color = float4(1.0);
      * }
      * ~~~~~
+     *
+     * @param code The source code of the material.
+     * @param line The line number offset of the material, where 0 is the first line. Used for error
+     *             reporting
      */
     MaterialBuilder& material(const char* code, size_t line = 0) noexcept;
 
@@ -296,6 +307,10 @@ public:
      *
      * }
      * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+     * @param code The source code of the material.
+     * @param line The line number offset of the material, where 0 is the first line. Used for error
+     *             reporting
      */
     MaterialBuilder& materialVertex(const char* code, size_t line = 0) noexcept;
 
@@ -318,13 +333,13 @@ public:
      */
     MaterialBuilder& culling(CullingMode culling) noexcept;
 
-    //! Enable / disable color-buffer write (enabled by default).
+    //! Enable / disable color-buffer write (enabled by default, material instances can override).
     MaterialBuilder& colorWrite(bool enable) noexcept;
 
-    //! Enable / disable depth-buffer write (enabled by default for opaque, disabled for others).
+    //! Enable / disable depth-buffer write (enabled by default for opaque, disabled for others, material instances can override).
     MaterialBuilder& depthWrite(bool enable) noexcept;
 
-    //! Enable / disable depth based culling (enabled by default).
+    //! Enable / disable depth based culling (enabled by default, material instances can override).
     MaterialBuilder& depthCulling(bool enable) noexcept;
 
     /**
@@ -388,8 +403,14 @@ public:
     //! Enable / disable multi-bounce ambient occlusion, disabled by default on mobile.
     MaterialBuilder& multiBounceAmbientOcclusion(bool multiBounceAO) noexcept;
 
-    //! Enable / disable specular ambient occlusion, disabled by default on mobile.
-    MaterialBuilder& specularAmbientOcclusion(bool specularAO) noexcept;
+    //! Set the specular ambient occlusion technique. Disabled by default on mobile.
+    MaterialBuilder& specularAmbientOcclusion(SpecularAmbientOcclusion specularAO) noexcept;
+
+    //! Specify the refraction
+    MaterialBuilder& refractionMode(RefractionMode refraction) noexcept;
+
+    //! Specify the refraction type
+    MaterialBuilder& refractionType(RefractionType refractionType) noexcept;
 
     //! Specifies how transparent objects should be rendered (default is DEFAULT).
     MaterialBuilder& transparencyMode(TransparencyMode mode) noexcept;
@@ -425,6 +446,12 @@ public:
 
     //! Specifies a list of variants that should be filtered out during code generation.
     MaterialBuilder& variantFilter(uint8_t variantFilter) noexcept;
+
+    //! Adds a new preprocessor macro definition to the shader code. Can be called repeatedly.
+    MaterialBuilder& shaderDefine(const char* name, const char* value) noexcept;
+
+    MaterialBuilder& enableFramebufferFetch() noexcept;
+
 
     //! Build the material.
     Package build() noexcept;
@@ -467,7 +494,7 @@ public:
     // Returns true if any of the parameter samplers is of type samplerExternal
     bool hasExternalSampler() const noexcept;
 
-    static constexpr size_t MAX_PARAMETERS_COUNT = 32;
+    static constexpr size_t MAX_PARAMETERS_COUNT = 48;
     using ParameterList = Parameter[MAX_PARAMETERS_COUNT];
 
     // returns the number of parameters declared in this material
@@ -504,6 +531,7 @@ private:
     bool isLit() const noexcept { return mShading != filament::Shading::UNLIT; }
 
     utils::CString mMaterialName;
+    utils::CString mFileName;
 
     class ShaderCode {
     public:
@@ -514,7 +542,7 @@ private:
         }
 
         // Resolve all the #include directives, returns true if successful.
-        bool resolveIncludes(IncludeCallback callback) noexcept;
+        bool resolveIncludes(IncludeCallback callback, const utils::CString& fileName) noexcept;
 
         const utils::CString& getResolved() const noexcept {
             assert(mIncludesResolved);
@@ -573,8 +601,13 @@ private:
 
     bool mMultiBounceAO = false;
     bool mMultiBounceAOSet = false;
-    bool mSpecularAO = false;
+
+    SpecularAmbientOcclusion mSpecularAO = SpecularAmbientOcclusion::NONE;
     bool mSpecularAOSet = false;
+
+    bool mEnableFramebufferFetch = false;
+
+    PreprocessorDefineList mDefines;
 };
 
 } // namespace filamat

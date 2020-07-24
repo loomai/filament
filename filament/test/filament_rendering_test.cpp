@@ -18,8 +18,13 @@
 
 #include <filament/Engine.h>
 #include <filament/Renderer.h>
+#include <filament/Skybox.h>
+#include <filament/Scene.h>
 #include <filament/View.h>
 #include <filament/Viewport.h>
+#include <filament/ColorGrading.h>
+
+#include <utils/EntityManager.h>
 
 #include <backend/PixelBufferDescriptor.h>
 
@@ -32,8 +37,11 @@ protected:
     SwapChain* mSurface = nullptr;
     Renderer* mRenderer = nullptr;
     View* mView = nullptr;
+    Skybox* mSkybox = nullptr;
     Scene* mScene = nullptr;
     Camera* mCamera = nullptr;
+    utils::Entity mCameraEntity;
+    ColorGrading* mColorGrading = nullptr;
 
     using closure_t = std::function<void(uint8_t const* rgba, uint32_t width, uint32_t height)>;
 
@@ -43,18 +51,33 @@ protected:
         mRenderer = mEngine->createRenderer();
 
         mScene = mEngine->createScene();
-        mCamera = mEngine->createCamera();
+
+        mCameraEntity = utils::EntityManager::get().create();
+        mCamera = mEngine->createCamera(mCameraEntity);
 
         mView = mEngine->createView();
         mView->setViewport({0, 0, 16, 16});
         mView->setScene(mScene);
         mView->setCamera(mCamera);
+
+        mColorGrading = ColorGrading::Builder()
+            .toneMapping(ColorGrading::ToneMapping::LINEAR)
+            .build(*mEngine);
+        mView->setColorGrading(mColorGrading);
+
+        mSkybox = Skybox::Builder().build(*mEngine);
+        mScene->setSkybox(mSkybox);
     }
 
     void TearDown() override {
-        mEngine->destroy(mCamera);
+        mEngine->destroy(mColorGrading);
+
+        mEngine->destroyCameraComponent(mCameraEntity);
+        utils::EntityManager::get().destroy(mCameraEntity);
+
         mEngine->destroy(mScene);
         mEngine->destroy(mView);
+        mEngine->destroy(mSkybox);
         mEngine->destroy(mRenderer);
         mEngine->destroy(mSurface);
         Engine::destroy(&mEngine);
@@ -91,8 +114,7 @@ private:
 };
 
 TEST_F(RenderingTest, ClearRed) {
-    mView->setClearColor(LinearColorA{1, 0, 0, 1});
-    mView->setToneMapping(View::ToneMapping::LINEAR);
+    mSkybox->setColor(LinearColorA{1, 0, 0, 1});
     mView->setDithering(View::Dithering::NONE);
     runTest([this](uint8_t const* rgba, uint32_t width, uint32_t height) {
         EXPECT_EQ(rgba[0], 0xff);
@@ -103,8 +125,7 @@ TEST_F(RenderingTest, ClearRed) {
 }
 
 TEST_F(RenderingTest, ClearGreen) {
-    mView->setClearColor(LinearColorA{0, 1, 0, 1});
-    mView->setToneMapping(View::ToneMapping::LINEAR);
+    mSkybox->setColor(LinearColorA{0, 1, 0, 1});
     mView->setDithering(View::Dithering::NONE);
     runTest([this](uint8_t const* rgba, uint32_t width, uint32_t height) {
         EXPECT_EQ(rgba[0], 0);

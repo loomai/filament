@@ -16,11 +16,12 @@
 
 #include "components/TransformManager.h"
 
+#include <math/mat4.h>
+
 using namespace utils;
 using namespace filament::math;
 
 namespace filament {
-namespace details {
 
 FTransformManager::FTransformManager() noexcept = default;
 
@@ -377,10 +378,6 @@ void FTransformManager::gc(utils::EntityManager& em) noexcept {
             });
 }
 
-} // namespace details
-
-using namespace details;
-
 TransformManager::children_iterator& TransformManager::children_iterator::operator++() {
     FTransformManager const& that = upcast(mManager);
     mInstance = that.mManager[mInstance].next;
@@ -393,6 +390,10 @@ TransformManager::children_iterator& TransformManager::children_iterator::operat
 
 void TransformManager::create(Entity entity, Instance parent, const mat4f& worldTransform) {
     upcast(this)->create(entity, parent, worldTransform);
+}
+
+void TransformManager::create(Entity entity, Instance parent) {
+    upcast(this)->create(entity, parent, {});
 }
 
 void TransformManager::destroy(Entity e) noexcept {

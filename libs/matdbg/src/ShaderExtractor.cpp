@@ -46,11 +46,11 @@ ShaderExtractor::ShaderExtractor(Backend backend, const void* data, size_t size)
     switch (backend) {
         case Backend::OPENGL:
             mMaterialTag = ChunkType::MaterialGlsl;
-            mDictionaryTag = ChunkType::DictionaryGlsl;
+            mDictionaryTag = ChunkType::DictionaryText;
             break;
         case Backend::METAL:
             mMaterialTag = ChunkType::MaterialMetal;
-            mDictionaryTag = ChunkType::DictionaryMetal;
+            mDictionaryTag = ChunkType::DictionaryText;
             break;
         case Backend::VULKAN:
             mMaterialTag = ChunkType::MaterialSpirv;
@@ -66,6 +66,10 @@ bool ShaderExtractor::parse() noexcept {
         return mMaterialChunk.readIndex(mMaterialTag);
     }
     return false;
+}
+
+bool ShaderExtractor::getDictionary(BlobDictionary& dictionary) noexcept {
+    return DictionaryReader::unflatten(mChunkContainer, mDictionaryTag, dictionary);
 }
 
 bool ShaderExtractor::getShader(ShaderModel shaderModel,
@@ -102,10 +106,16 @@ CString ShaderExtractor::spirvToGLSL(const uint32_t* data, size_t wordCount) {
 // but please do not submit. We prefer to use the syntax that the standalone "spirv-dis" tool
 // uses, which lets us easily generate test cases for the spirv-cross project.
 CString ShaderExtractor::spirvToText(const uint32_t* begin, size_t wordCount) {
-    auto context = spvContextCreate(SPV_ENV_UNIVERSAL_1_1);
+    spv_context context = spvContextCreate(SPV_ENV_UNIVERSAL_1_0);
+    if (SPV_SUCCESS != spvValidateBinary(context, begin, wordCount, nullptr)) {
+        spvContextDestroy(context);
+        return CString("Validation failure.");
+    }
+
     spv_text text = nullptr;
     const uint32_t options = SPV_BINARY_TO_TEXT_OPTION_INDENT |
             SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES;
+
     spvBinaryToText(context, begin, wordCount, options, &text, nullptr);
     CString result(text->str);
     spvTextDestroy(text);

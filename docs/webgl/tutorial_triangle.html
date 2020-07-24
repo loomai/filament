@@ -30,7 +30,7 @@ a mobile-friendly page with a full-screen canvas.</p>
 &lt;<span style="color: #008000; font-weight: bold">body</span>&gt;
     &lt;<span style="color: #008000; font-weight: bold">canvas</span>&gt;&lt;/<span style="color: #008000; font-weight: bold">canvas</span>&gt;
     &lt;<span style="color: #008000; font-weight: bold">script</span> <span style="color: #7D9029">src</span><span style="color: #666666">=</span><span style="color: #BA2121">&quot;//unpkg.com/filament/filament.js&quot;</span>&gt;&lt;/<span style="color: #008000; font-weight: bold">script</span>&gt;
-    &lt;<span style="color: #008000; font-weight: bold">script</span> <span style="color: #7D9029">src</span><span style="color: #666666">=</span><span style="color: #BA2121">&quot;//unpkg.com/gl-matrix@2.8.1/dist/gl-matrix-min.js&quot;</span>&gt;&lt;/<span style="color: #008000; font-weight: bold">script</span>&gt;
+    &lt;<span style="color: #008000; font-weight: bold">script</span> <span style="color: #7D9029">src</span><span style="color: #666666">=</span><span style="color: #BA2121">&quot;//unpkg.com/gl-matrix@2.8.1&quot;</span>&gt;&lt;/<span style="color: #008000; font-weight: bold">script</span>&gt;
     &lt;<span style="color: #008000; font-weight: bold">script</span> <span style="color: #7D9029">src</span><span style="color: #666666">=</span><span style="color: #BA2121">&quot;triangle.js&quot;</span>&gt;&lt;/<span style="color: #008000; font-weight: bold">script</span>&gt;
 &lt;/<span style="color: #008000; font-weight: bold">body</span>&gt;
 &lt;/<span style="color: #008000; font-weight: bold">html</span>&gt;
@@ -180,12 +180,16 @@ Filament.RenderableManager.Builder(<span style="color: #666666">1</span>)
 view.</p>
 <div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">this</span>.swapChain <span style="color: #666666">=</span> engine.createSwapChain();
 <span style="color: #008000; font-weight: bold">this</span>.renderer <span style="color: #666666">=</span> engine.createRenderer();
-<span style="color: #008000; font-weight: bold">this</span>.camera <span style="color: #666666">=</span> engine.createCamera();
+<span style="color: #008000; font-weight: bold">this</span>.camera <span style="color: #666666">=</span> engine.createCamera(Filament.EntityManager.get().create());
 <span style="color: #008000; font-weight: bold">this</span>.view <span style="color: #666666">=</span> engine.createView();
 <span style="color: #008000; font-weight: bold">this</span>.view.setCamera(<span style="color: #008000; font-weight: bold">this</span>.camera);
 <span style="color: #008000; font-weight: bold">this</span>.view.setScene(<span style="color: #008000; font-weight: bold">this</span>.scene);
-<span style="color: #008000; font-weight: bold">this</span>.view.setClearColor([<span style="color: #666666">0.1</span>, <span style="color: #666666">0.2</span>, <span style="color: #666666">0.3</span>, <span style="color: #666666">1.0</span>]); <span style="color: #408080; font-style: italic">// blue-green background</span>
-<span style="color: #008000; font-weight: bold">this</span>.resize(); <span style="color: #408080; font-style: italic">// adjust the initial viewport</span>
+
+<span style="color: #408080; font-style: italic">// Set up a blue-green background:</span>
+<span style="color: #008000; font-weight: bold">this</span>.renderer.setClearOptions({clearColor<span style="color: #666666">:</span> [<span style="color: #666666">0.0</span>, <span style="color: #666666">0.1</span>, <span style="color: #666666">0.2</span>, <span style="color: #666666">1.0</span>], clear<span style="color: #666666">:</span> <span style="color: #008000; font-weight: bold">true</span>});
+
+<span style="color: #408080; font-style: italic">// Adjust the initial viewport:</span>
+<span style="color: #008000; font-weight: bold">this</span>.resize();
 </pre></div>
 
 <p>At this point, we're done creating all Filament entities, and the code should run without errors.

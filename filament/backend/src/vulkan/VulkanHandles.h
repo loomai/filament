@@ -45,21 +45,20 @@ struct VulkanTexture;
 struct VulkanRenderTarget : private HwRenderTarget {
 
     // Creates an offscreen render target.
-    VulkanRenderTarget(VulkanContext& context, uint32_t w, uint32_t h, uint32_t colorLevel,
-            VulkanTexture* color, uint32_t depthLevel, VulkanTexture* depth);
+    VulkanRenderTarget(VulkanContext& context, uint32_t w, uint32_t h, TargetBufferInfo colorInfo,
+            VulkanTexture* color, TargetBufferInfo depthInfo, VulkanTexture* depth);
 
     // Creates a special "default" render target (i.e. associated with the swap chain)
-    explicit VulkanRenderTarget(VulkanContext& context) : HwRenderTarget(0, 0), mContext(context),
-            mOffscreen(false), mColorLevel(0), mDepthLevel(0) {}
+    explicit VulkanRenderTarget(VulkanContext& context);
 
     ~VulkanRenderTarget();
 
-    bool isOffscreen() const { return mOffscreen; }
     void transformClientRectToPlatform(VkRect2D* bounds) const;
     void transformClientRectToPlatform(VkViewport* bounds) const;
     VkExtent2D getExtent() const;
     VulkanAttachment getColor() const;
     VulkanAttachment getDepth() const;
+    bool invalidate();
     uint32_t getColorLevel() const { return mColorLevel; }
     uint32_t getDepthLevel() const { return mDepthLevel; }
 private:
@@ -116,13 +115,16 @@ struct VulkanTexture : public HwTexture {
     ~VulkanTexture();
     void update2DImage(const PixelBufferDescriptor& data, uint32_t width, uint32_t height,
             int miplevel);
+    void update3DImage(const PixelBufferDescriptor& data, uint32_t width, uint32_t height,
+            uint32_t depth, int miplevel);
     void updateCubeImage(const PixelBufferDescriptor& data, const FaceOffsets& faceOffsets,
             int miplevel);
 
     // Issues a barrier that transforms the layout of the image, e.g. from a CPU-writeable
     // layout to a GPU-readable layout.
     static void transitionImageLayout(VkCommandBuffer cmdbuffer, VkImage image,
-            VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t miplevel, uint32_t layers);
+            VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t miplevel,
+            uint32_t layers, uint32_t levels, VkImageAspectFlags aspect);
 
     VkFormat vkformat;
     VkImageView imageView = VK_NULL_HANDLE;
@@ -133,8 +135,10 @@ private:
     // Issues a copy from a VkBuffer to a specified miplevel in a VkImage. The given width and
     // height define a subregion within the miplevel.
     void copyBufferToImage(VkCommandBuffer cmdbuffer, VkBuffer buffer, VkImage image,
-            uint32_t width, uint32_t height, FaceOffsets const* faceOffsets, uint32_t miplevel);
+            uint32_t width, uint32_t height, uint32_t depth,
+            FaceOffsets const* faceOffsets, uint32_t miplevel);
 
+    VkImageAspectFlags mAspect;
     VulkanContext& mContext;
     VulkanStagePool& mStagePool;
 };
@@ -158,6 +162,20 @@ struct VulkanRenderPrimitive : public HwRenderPrimitive {
 struct VulkanFence : public HwFence {
     VulkanFence(const VulkanCommandBuffer& commands) : fence(commands.fence) {}
     std::shared_ptr<VulkanCmdFence> fence;
+};
+
+struct VulkanSync : public HwSync {
+    VulkanSync(const VulkanCommandBuffer& commands) : fence(commands.fence) {}
+    std::shared_ptr<VulkanCmdFence> fence;
+};
+
+struct VulkanTimerQuery : public HwTimerQuery {
+    VulkanTimerQuery(VulkanContext& context);
+    ~VulkanTimerQuery();
+    uint32_t startingQueryIndex;
+    uint32_t stoppingQueryIndex;
+    VulkanContext& mContext;
+    std::atomic<VulkanCommandBuffer*> cmdbuffer;
 };
 
 } // namespace filament

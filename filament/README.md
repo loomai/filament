@@ -12,7 +12,6 @@ Filament. Latest versions are available on the [project page](https://github.com
 - `mipgen`, Generates a series of miplevels from a source image.
 - `normal-blending`, Tool to blend normal maps
 - `roughness-prefilter`, Pre-filters a roughness map from a normal map to reduce aliasing
-- `skygen`, Physically-based sky environment texture generator
 - `specular-color`, Computes the specular color of conductors based on spectral data
 
 You can refer to the individual documentation files in `docs/` for more information.
@@ -44,7 +43,7 @@ To link against debug builds of Filament, you must also link against:
 To use the Vulkan backend on macOS you must also make the following libraries available at runtime:
 - `MoltenVK_icd.json`
 - `libMoltenVK.dylib`
-- `vulkan.1.dylib`
+- `libvulkan.1.dylib`
 
 ## Linking against Filament
 

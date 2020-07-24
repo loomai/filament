@@ -19,6 +19,8 @@
 
 // NOTE: this header should not include STL headers
 
+#include <utils/compiler.h>
+
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -68,7 +70,7 @@ template <size_t N>
 using StringLiteral = const char[N];
 
 //! \publicsection
-class StaticString {
+class UTILS_PUBLIC StaticString {
 public:
     using value_type      = char;
     using size_type       = uint32_t;
@@ -186,7 +188,7 @@ private:
 
 // ------------------------------------------------------------------------------------------------
 
-class CString {
+class UTILS_PUBLIC CString {
 public:
     using value_type      = char;
     using size_type       = uint32_t;
@@ -258,6 +260,7 @@ public:
     const_iterator cend() const noexcept { return end(); }
 
     CString& replace(size_type pos, size_type len, const CString& str) noexcept;
+    CString& insert(size_type pos, const CString& str) noexcept { return replace(pos, 0, str); }
 
     const_reference operator[](size_type pos) const noexcept {
         assert(pos < size());

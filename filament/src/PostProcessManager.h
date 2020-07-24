@@ -28,61 +28,99 @@
 
 namespace filament {
 
-namespace details {
+class FColorGrading;
+class FEngine;
 class FMaterial;
 class FMaterialInstance;
-class FEngine;
 class FView;
 class RenderPass;
 struct CameraInfo;
-} // namespace details
 
 class PostProcessManager {
 public:
-    explicit PostProcessManager(details::FEngine& engine) noexcept;
+    explicit PostProcessManager(FEngine& engine) noexcept;
 
     void init() noexcept;
     void terminate(backend::DriverApi& driver) noexcept;
 
-    FrameGraphId <FrameGraphTexture> toneMapping(FrameGraph& fg,
-            FrameGraphId <FrameGraphTexture> input,
-            backend::TextureFormat outFormat, bool dithering, bool translucent, bool fxaa) noexcept;
+    // methods below are ordered relative to their position in the pipeline (as much as possible)
 
+    // structure (depth) pass
+    FrameGraphId<FrameGraphTexture> structure(FrameGraph& fg, RenderPass const& pass,
+            uint32_t width, uint32_t height, float scale) noexcept;
+
+    // SSAO
+    FrameGraphId<FrameGraphTexture> screenSpaceAmbientOclusion(FrameGraph& fg,
+            RenderPass& pass, filament::Viewport const& svp,
+            CameraInfo const& cameraInfo,
+            View::AmbientOcclusionOptions const& options) noexcept;
+
+    // Used in refraction pass
+    FrameGraphId<FrameGraphTexture> generateGaussianMipmap(FrameGraph& fg,
+            FrameGraphId<FrameGraphTexture> input, size_t roughnessLodCount, bool reinhard,
+            size_t kernelWidth, float sigmaRatio = 6.0f) noexcept;
+
+    // Depth-of-field
+    FrameGraphId<FrameGraphTexture> dof(FrameGraph& fg,
+            FrameGraphId<FrameGraphTexture> input,
+            const View::DepthOfFieldOptions& dofOptions,
+            bool translucent,
+            const CameraInfo& cameraInfo) noexcept;
+
+    // Color grading, tone mapping, etc.
+    void colorGradingSubpass(backend::DriverApi& driver, const FColorGrading* colorGrading,
+            View::VignetteOptions vignetteOptions, bool translucent, bool fxaa, bool dithering,
+            uint32_t width, uint32_t height) noexcept;
+
+    FrameGraphId<FrameGraphTexture> colorGrading(FrameGraph& fg,
+            FrameGraphId<FrameGraphTexture> input, const FColorGrading* colorGrading,
+            backend::TextureFormat outFormat, bool translucent, bool fxaa, math::float2 scale,
+            View::BloomOptions bloomOptions, View::VignetteOptions vignetteOptions, bool dithering) noexcept;
+
+    // Anti-aliasing
     FrameGraphId<FrameGraphTexture> fxaa(FrameGraph& fg,
             FrameGraphId<FrameGraphTexture> input, backend::TextureFormat outFormat,
             bool translucent) noexcept;
 
-    FrameGraphId <FrameGraphTexture> dynamicScaling(
-            FrameGraph& fg, uint8_t msaa, bool scaled, bool blend,
-            FrameGraphId <FrameGraphTexture> input,
-            backend::TextureFormat outFormat) noexcept;
+    // Blit/rescaling/resolves
+    FrameGraphId<FrameGraphTexture> opaqueBlit(FrameGraph& fg,
+            FrameGraphId<FrameGraphTexture> input, FrameGraphTexture::Descriptor outDesc,
+            backend::SamplerMagFilter filter = backend::SamplerMagFilter::LINEAR) noexcept;
 
-    FrameGraphId<FrameGraphTexture> ssao(FrameGraph& fg, details::RenderPass& pass,
-            filament::Viewport const& svp,
-            details::CameraInfo const& cameraInfo,
-            View::AmbientOcclusionOptions const& options) noexcept;
+    FrameGraphId<FrameGraphTexture> blendBlit(
+            FrameGraph& fg, bool translucent, View::QualityLevel quality,
+            FrameGraphId<FrameGraphTexture> input, FrameGraphTexture::Descriptor outDesc) noexcept;
 
-    backend::Handle<backend::HwTexture> getNoSSAOTexture() const {
-        return mNoSSAOTexture;
-    }
+    FrameGraphId<FrameGraphTexture> resolve(FrameGraph& fg,
+            const char* outputBufferName, FrameGraphId<FrameGraphTexture> input) noexcept;
+
+    backend::Handle<backend::HwTexture> getOneTexture() const { return mDummyOneTexture; }
+    backend::Handle<backend::HwTexture> getZeroTexture() const { return mDummyZeroTexture; }
 
 private:
-    details::FEngine& mEngine;
-
-    FrameGraphId<FrameGraphTexture> depthPass(FrameGraph& fg, details::RenderPass const& pass,
-            uint32_t width, uint32_t height, View::AmbientOcclusionOptions const& options) noexcept;
+    FEngine& mEngine;
 
     FrameGraphId<FrameGraphTexture> mipmapPass(FrameGraph& fg,
             FrameGraphId<FrameGraphTexture> input, size_t level) noexcept;
 
-    FrameGraphId<FrameGraphTexture> blurPass(FrameGraph& fg,
-            FrameGraphId<FrameGraphTexture> input,
-            FrameGraphId<FrameGraphTexture> depth, math::int2 axis) noexcept;
+    FrameGraphId<FrameGraphTexture> bilateralBlurPass(
+            FrameGraph& fg, FrameGraphId<FrameGraphTexture> input, math::int2 axis, float zf,
+            backend::TextureFormat format) noexcept;
+
+    FrameGraphId<FrameGraphTexture> gaussianBlurPass(FrameGraph& fg,
+            FrameGraphId<FrameGraphTexture> input, uint8_t srcLevel,
+            FrameGraphId<FrameGraphTexture> output, uint8_t dstLevel,
+            bool reinhard, size_t kernelWidth, float sigma = 6.0f) noexcept;
+
+    FrameGraphId<FrameGraphTexture> bloomPass(FrameGraph& fg,
+            FrameGraphId<FrameGraphTexture> input, backend::TextureFormat outFormat,
+            View::BloomOptions& bloomOptions, math::float2 scale) noexcept;
+
 
     class PostProcessMaterial {
     public:
-        PostProcessMaterial() noexcept = default;
-        PostProcessMaterial(details::FEngine& engine, uint8_t const* data, size_t size) noexcept;
+        PostProcessMaterial() noexcept;
+        PostProcessMaterial(FEngine& engine, uint8_t const* data, int size) noexcept;
 
         PostProcessMaterial(PostProcessMaterial const& rhs) = delete;
         PostProcessMaterial& operator=(PostProcessMaterial const& rhs) = delete;
@@ -92,27 +130,53 @@ private:
 
         ~PostProcessMaterial();
 
-        void terminate(details::FEngine& engine) noexcept;
+        void terminate(FEngine& engine) noexcept;
 
-        details::FMaterial* getMaterial() const { return mMaterial; }
-        details::FMaterialInstance* getMaterialInstance() const { return mMaterialInstance; }
-        backend::Handle<backend::HwProgram> const& getProgram() const { return mProgram; }
+        FMaterial* getMaterial() const;
+        FMaterialInstance* getMaterialInstance() const;
+
+        backend::PipelineState getPipelineState(uint8_t variant) const noexcept;
+        backend::PipelineState getPipelineState() const noexcept;
 
     private:
-        details::FMaterial* mMaterial = nullptr;
-        details::FMaterialInstance* mMaterialInstance = nullptr;
-        backend::Handle<backend::HwProgram> mProgram;
+        void assertMaterial() const noexcept;
+
+        union {
+            struct {
+                mutable FMaterial* mMaterial;
+                mutable FMaterialInstance* mMaterialInstance;
+            };
+            struct {
+                FEngine* mEngine;
+                uint8_t const* mData;
+            };
+        };
+        uint32_t mSize{};
+        mutable bool mHasMaterial{};
     };
 
-    PostProcessMaterial mSSAO;
     PostProcessMaterial mMipmapDepth;
-    PostProcessMaterial mBlur;
-    PostProcessMaterial mBlit;
-    PostProcessMaterial mTonemapping;
-    PostProcessMaterial mFxaa;
 
-    backend::Handle<backend::HwTexture> mNoSSAOTexture;
-    backend::Handle<backend::HwTexture> mNoiseTexture;
+    PostProcessMaterial mSSAO;
+    PostProcessMaterial mBilateralBlur;
+    PostProcessMaterial mSeparableGaussianBlur;
+    PostProcessMaterial mDoFDownsample;
+    PostProcessMaterial mDoFMipmap;
+    PostProcessMaterial mDoF;
+    PostProcessMaterial mDoFTiles;
+    PostProcessMaterial mDoFDilate;
+    PostProcessMaterial mDoFCombine;
+    PostProcessMaterial mBloomDownsample;
+    PostProcessMaterial mBloomUpsample;
+    PostProcessMaterial mColorGradingAsSubpass;
+    PostProcessMaterial mColorGrading;
+    PostProcessMaterial mFxaa;
+    PostProcessMaterial mBlit[3];
+
+    backend::Handle<backend::HwTexture> mDummyOneTexture;
+    backend::Handle<backend::HwTexture> mDummyZeroTexture;
+
+    size_t mSeparableGaussianBlurKernelStorageSize = 0;
 };
 
 } // namespace filament

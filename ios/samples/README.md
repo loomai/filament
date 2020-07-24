@@ -6,7 +6,7 @@ application.
 ## Prequisites
 
 Currently, both the OpenGL ES 3.0 and Metal backends are supported, but using the Metal backend is
-recommended. Building for the iOS simulator is also supported, but only for the OpenGL backend.
+recommended.
 
 Filament is kept up-to-date with Apple's latest SDK and thus must be built using the latest Xcode.
 Pre-built binaries can be accessed from [Filament
@@ -14,6 +14,9 @@ releases](https://github.com/google/filament/releases).
 
 The iOS Metal backend is supported on iOS 12 and up. The OpenGL ES backend should be supported on iOS 7
 and up, though it is not regularly tested.
+
+The iOS simulator is also supported for both the OpenGL and Metal backends, but please be aware that
+some rendering features (such as shadows) might not work properly in the simulator.
 
 Before attempting to build for iOS, read [Filament's README](../../README.md). You must first
 cross-compile Filament for desktop and ARM64 on a macOS host before running the sample. The easiest
@@ -84,9 +87,10 @@ from scratch.
 
 ## XcodeGen
 
-[XcodeGen](https://github.com/yonaskolb/XcodeGen) is used to generate the Xcode projects. While not
-required to run the samples, XcodeGen makes modifying them easier. Each sample folder contains the
-`project.yml` file used for the sample, which includes a global `app-template.yml` file. Simply run
+[XcodeGen](https://github.com/yonaskolb/XcodeGen) version 2.14.0 is used to generate the Xcode
+projects. While not required to run the samples, XcodeGen makes modifying them easier. Each sample
+folder contains the `project.yml` file used for the sample, which includes a global
+`app-template.yml` file. Simply run
 
 ```
 $ xcodegen

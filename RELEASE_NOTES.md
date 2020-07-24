@@ -5,6 +5,123 @@ A new header is inserted each time a *tag* is created.
 
 ## Next release
 
+- Improved JavaScript API for SurfaceOrientation and Scene.
+- Updated JavaScript API around Camera construction / destruction (⚠️ **API change**)
+- gltfio now uses high precision for texture coordinates.
+- Fixed regression in JavaScript IcoSphere that caused tutorial to fail.
+- gltf_viewer now supports viewing with glTF cameras.
+- gltfio now supports importing glTF cameras.
+- gltfio now supports simple instancing of entire assets.
+- gltfio has improved performance and assumes assets are well-formed.
+- gltfio now supports name and prefix lookup for entities.
+- ModelViewer now allows resources to be fetched off the UI thread.
+- Add missing JavaScript API for `View::setVisibleLayers()`.
+- Add support for DOF with Metal backend.
+- SSAO now has an optional high(er) quality upsampler.
+- Tone mappping now uses the real ACES tone mapper, applied in the proper color space.
+- Tone mapping is now applied via a LUT.
+- `View::setToneMapping` is deprecated, use `View::setColorGrading` instead. (⚠️ **API change**)
+- Color grading capabilities per View: white balance (temperature/tint), channel mixer,
+  tonal ranges (shadows/mid-tones/highlights), ASC CDL (slope/offset/power), contrast, vibrance,
+  saturation, and curves.
+- Fixed bug in the Metal backend when SSR and MSAA were turned on.
+- Fixed Metal issue with `BufferDescriptor` and `PixelBufferDescriptor`s not being called on
+  the application thread.
+- New Depth-of-Field (Dof) algorithm, which is more plausible and about an order of magnitude faster
+  (about 4ms on Pixel4)
+
+## v1.7.0
+
+- MaterialInstances now have optional names.
+- Improved Depth of Field effect: bokeh rotates with the aperture diameter, improved CoC calculation, feather blur radius.
+- Introduced `getNormalizedViewportCoord` shader API.
+- Added basic SwiftShader support.
+- Fixed SwapChain resizing issues in Vulkan.
+- Added debug option to track `Entities`.
+- Fixed `Camera` entity leaks.
+- Removed problematic `CreateEliminateDeadMembersPass`, which broke UBO layout.
+- Added assert that the engine is not terminated in `flushAndWait()`.
+- Added several fixes and improvements around objects lifetime management
+- `gltfio`: AssetLoader now loads names for mesh-free nodes
+- `gltfio`: Material names are now preserved in ubershader mode
+- Fixed JNI objects allocation and memory corruption
+- JNI constructors are now "package private" unless they take an Engine.
+
+## v1.6.0
+
+- gltfio: fixed incorrect cone angles with lights.
+- Specular ambient occlusion now offers 3 modes: off, simple (default on desktop) and bent normals.
+  The latter is more accurate but more expensive and requires a bent normal to be specified in the
+  material. If selected and not bent normal is specified, Filament falls back to the simple mode.
+- Specular ambient occlusion from bent normals now smoothly disappears as roughness goes from 0.3
+  to 0.1. Specular ambient occlusion can completely remove specular light which looks bad on glossy
+  metals. Use the simple specular occlusion mode for glossy metals instead.
+- Refraction can now be set on `MaterialBuilder` from Java.
+- Refraction mode and type can now be set by calling `MaterialBuilder::refractionMode()`.
+  and `MaterialBuilder::refractionType()` instad of `materialRefraction()` and
+  `materialRefractionType()` (️⚠️ **API change**).
+- Fixed documentation confusion about focused spot vs spot lights.
+- Fixed a race condition in the job system.
+- Fixed support for 565 bitmaps on Android.
+- Added support for timer queries in the Metal backend.
+- Improved dynamic resolution implementation to be more accurate and target more platforms.
+- `beginFrame()` now accepts a v-sync timestamp for accurate frame time measurement (used for
+  frame skipping and dynamic resolution). You can pass `0` to get the old behavior (⚠️ **API change**).
+- Fixed several issues related to multi-view support: removed
+  `View::setClearColor()`, a similar functionality is now handled by `Renderer::setClearOptions()`
+  and `Skybox`, the later now can be set to a constant color (⚠️ **API breakage**).
+- Fixed spot/point lights rendering bug depending on Viewport position.
+- Textures can now be swizzled.
+- The emissive property of materials is now expressed in nits and the alpha channel contains the
+  exposure weight (at 0.0 the exposure is not applied to the emissive component of a surface, at
+  1.0 the exposure is applied just like with any regular light) (⚠️ **API breakage**).
+- Added new `intensityCandela` and `setIntensityCandela` API to `LightManager` for setting a punctual
+  light's intensity in candela.
+- Fixed an issue where some `ShadowOptions` were not being respected when passed to
+  `LightManager::Builder`.
+- Added a Depth of Field post-processing effect
+
+## v1.5.2
+
+- gltfio: fixed null pointer exception seen with some Android clients.
+- Engine now exposes its JobSystem to C++ clients.
+- Expose setCulling() in public RenderableManager API.
+
+## v1.5.1
+
+- Fixed "no texture bound" warning in WebGL.
+- Fixed a clearing bug with imported render targets.
+- Fixed the creation potentially invalid entities during shadow map initialization.
+- Fixed Maven dependencies for the `filament-utils` library.
+
+## v1.5.0
+
+⚠️ This release breaks compiled materials, use matc to recompile.
+
+- The Android support libraries (gltfio and filament-utils) now use dynamic linking.
+- Removed depth-prepass related APIs. (⚠ API Change)
+- gltfio: add asynchronous API to ResourceLoader.
+- gltfio: generate normals for flat-shaded models that do not have normals.
+- Material instances now allow dynamic depth testing and other rasterization state.
+- Unlit materials now apply emissive in the same way as lit materials.
+- Screen-space refraction is now supported.
+- Support for HDR Bloom as a post-process effect.
+- Alpha masked objects are now part of the SSAO pass.
+- Added Java bindings for geometry::SurfaceOrientation.
+- Fixed bug rendering transparent objects with Metal backend.
+- Fixed crash on macOS Catalina when rendering with Metal backend.
+- Fixed bug in Camera::setLensProjection() and added the aspect ratio parameter. (⚠ API Change)
+- WebGL: Improved TypeScript annotations.
+- WebGL: Simplified callback API for glTF. (⚠ API Change)
+- gltfio: Removed deprecated "Bindings" API. (⚠ API Change)
+- gltfio: Added support for Draco.
+- gltfio: Reduced the size of the library.
+- Improved performance of SSAO.
+- Added support for screen-space contact shadows.
+- Added support for global fog.
+- Added support for bent normal maps and specular occlusion from bent normal maps.
+- Added support for shadow-casting spot lights.
+
 ## v1.4.5
 
 - The depth prepass setting in View is now ignored and deprecated.

@@ -26,9 +26,6 @@ namespace filament {
 
 using namespace backend;
 
-namespace details {
-
-
 utils::Mutex FFence::sLock;
 utils::Condition FFence::sCondition;
 
@@ -99,7 +96,7 @@ FenceStatus FFence::wait(Mode mode, uint64_t timeout) noexcept {
             }
             engine.pumpPlatformEvents();
             const auto elapsed = std::chrono::system_clock::now() - startTime;
-            if (elapsed >= ns(timeout)) {
+            if (timeout != Fence::FENCE_WAIT_FOR_EVER && elapsed >= ns(timeout)) {
                 break;
             }
         }
@@ -110,11 +107,8 @@ FenceStatus FFence::wait(Mode mode, uint64_t timeout) noexcept {
     }
 
     if (fs->mType == Type::HARD) {
-        // mFenceHandle could be invalid if the driver doesn't support h/w fences
-        status = FenceStatus::ERROR;
-        if (mFenceHandle) {
-            status = engine.getDriverApi().wait(mFenceHandle, timeout);
-        }
+        // note: even if the driver doesn't support h/w fences, mFenceHandle will be valid
+        status = engine.getDriverApi().wait(mFenceHandle, timeout);
     }
     return status;
 }
@@ -147,13 +141,8 @@ Fence::FenceStatus FFence::FenceSignal::wait(uint64_t timeout) noexcept {
 }
 
 // ------------------------------------------------------------------------------------------------
-} // namespace details
-
-// ------------------------------------------------------------------------------------------------
 // Trampoline calling into private implementation
 // ------------------------------------------------------------------------------------------------
-
-using namespace details;
 
 FenceStatus Fence::waitAndDestroy(Fence* fence, Mode mode) {
     return FFence::waitAndDestroy(upcast(fence), mode);

@@ -22,7 +22,7 @@
 #include <utils/compiler.h>
 #include <utils/EntityInstance.h>
 
-#include <math/mat4.h>
+#include <math/mathfwd.h>
 
 #include <iterator>
 
@@ -33,9 +33,7 @@ class Entity;
 
 namespace filament {
 
-namespace details {
 class FTransformManager;
-} // namespace details
 
 /**
  * TransformManager is used to add transform components to entities.
@@ -73,7 +71,7 @@ public:
     using Instance = utils::EntityInstance<TransformManager>;
 
     class children_iterator : std::iterator<std::forward_iterator_tag, Instance> {
-        friend class details::FTransformManager;
+        friend class FTransformManager;
         TransformManager const& mManager;
         Instance mInstance;
         children_iterator(TransformManager const& mgr, Instance instance) noexcept
@@ -126,7 +124,8 @@ public:
      *
      * @see destroy()
      */
-    void create(utils::Entity entity, Instance parent = {}, const math::mat4f& localTransform = {});
+    void create(utils::Entity entity, Instance parent, const math::mat4f& localTransform);
+    void create(utils::Entity entity, Instance parent = {});
 
     /**
      * Destroys this component from the given entity, children are orphaned.

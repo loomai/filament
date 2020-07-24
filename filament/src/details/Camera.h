@@ -27,9 +27,9 @@
 #include <utils/Entity.h>
 
 #include <math/mat4.h>
+#include <math/scalar.h>
 
 namespace filament {
-namespace details {
 
 class FEngine;
 
@@ -38,6 +38,8 @@ class FEngine;
  */
 class FCamera : public Camera {
 public:
+    // a 35mm camera has a 36x24mm wide frame size
+    static constexpr const float SENSOR_SIZE = 0.024f;    // 24mm
 
     FCamera(FEngine& engine, utils::Entity e);
 
@@ -53,19 +55,24 @@ public:
                        Fov direction = Fov::VERTICAL) noexcept;
 
     // sets the projection matrix
-    void setLensProjection(double focalLength, double near, double far) noexcept;
-
+    void setLensProjection(double focalLength, double aspect, double near, double far) noexcept;
 
     // Sets a custom projection matrix (sets both the viewing and culling projections).
     void setCustomProjection(math::mat4 const& projection, double near, double far) noexcept;
 
+    void setScaling(math::double4 const& scaling) noexcept;
+
     // returns the projection matrix
-    const math::mat4& getProjectionMatrix() const noexcept {
-        return mProjection;
+    math::mat4 getProjectionMatrix() const noexcept {
+        return math::mat4(mScaling) * mProjection;
     }
 
-    const math::mat4& getCullingProjectionMatrix() const noexcept {
-        return mProjectionForCulling;
+    math::mat4 getCullingProjectionMatrix() const noexcept {
+        return math::mat4(mScaling) * mProjectionForCulling;
+    }
+
+    const math::double4& getScaling() const noexcept {
+        return mScaling;
     }
 
     float getNear() const noexcept { return mNear; }
@@ -111,6 +118,21 @@ public:
         return normalize(-getModelMatrix()[2].xyz);
     }
 
+    float getFieldOfView(Camera::Fov direction) const noexcept {
+        // note: this is meaning less for an orthographic projection
+        auto const& p = getProjectionMatrix();
+        switch (direction) {
+            case Fov::VERTICAL:
+                return std::abs(2.0f * std::atan(1.0f / float(p[1][1])));
+            case Fov::HORIZONTAL:
+                return std::abs(2.0f * std::atan(1.0f / float(p[0][0])));
+        }
+    }
+
+    float getFieldOfViewInDegrees(Camera::Fov direction) const noexcept {
+        return getFieldOfView(direction) * float(180.0f / math::F_PI);
+    }
+
     // returns a Frustum object in world space
     Frustum getFrustum() const noexcept;
 
@@ -145,6 +167,7 @@ private:
 
     math::mat4 mProjection;            // projection matrix (infinite far)
     math::mat4 mProjectionForCulling;  // projection matrix (with far plane)
+    math::double4 mScaling = {1.0f};   // additional scaling applied to projection
 
     float mNear;
     float mFar;
@@ -155,14 +178,20 @@ private:
 };
 
 struct CameraInfo {
-    math::mat4f projection;
-    math::mat4f cullingProjection;
-    math::mat4f model;
-    math::mat4f view;
-    float zn;
-    float zf;
-    float ev100 = 0.0f;
-    math::float3 worldOffset;
+    CameraInfo() noexcept = default;
+    explicit CameraInfo(FCamera const& camera) noexcept;
+    CameraInfo(FCamera const& camera, const math::mat4f& worldOriginCamera) noexcept;
+
+    math::mat4f projection;         // projection matrix for drawing (infinite zfar)
+    math::mat4f cullingProjection;  // projection matrix for culling
+    math::mat4f model;              // camera model matrix
+    math::mat4f view;               // camera view matrix
+    float zn{};                     // distance (positive) to the near plane
+    float zf{};                     // distance (positive) to the far plane
+    float ev100{};                  // exposure
+    float f{};                      // focal length (in m)
+    float A{};                      // aperture diameter (in m)
+    math::float3 worldOffset{};     // world offset, API-level camera position
     math::float3 const& getPosition() const noexcept { return model[3].xyz; }
     math::float3 getForwardVector() const noexcept { return normalize(-model[2].xyz); }
 
@@ -172,7 +201,6 @@ struct CameraInfo {
 
 FILAMENT_UPCAST(Camera)
 
-} // namespace details
 } // namespace filament
 
 #endif // TNT_FILAMENT_DETAILS_CAMERA_H

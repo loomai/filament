@@ -66,6 +66,7 @@ public class MaterialBuilder {
 
     public enum SamplerType {
         SAMPLER_2D,             // 2D texture
+        SAMPLER_2D_ARRAY,       // 2D array texture
         SAMPLER_CUBEMAP,        // Cube map texture
         SAMPLER_EXTERNAL,       // External texture
     }
@@ -146,6 +147,28 @@ public class MaterialBuilder {
                                 // mode is ignored. Can be combined with two-sided lighting
     }
 
+    public enum MaterialDomain {
+        SURFACE,
+        POST_PROCESS
+    }
+
+    public enum SpecularAmbientOcclusion {
+        NONE,
+        SIMPLE,
+        BENT_NORMALS
+    }
+
+    public enum RefractionMode {
+        NONE,
+        CUBEMAP,
+        SCREEN_SPACE
+    }
+
+    public enum RefractionType {
+        SOLID,
+        THIN
+    }
+
     public enum Platform {
         DESKTOP,
         MOBILE,
@@ -188,6 +211,12 @@ public class MaterialBuilder {
     @NonNull
     public MaterialBuilder name(@NonNull String name) {
         nMaterialBuilderName(mNativeObject, name);
+        return this;
+    }
+
+    @NonNull
+    public MaterialBuilder materialDomain(MaterialDomain domain) {
+        nMaterialBuilderMaterialDomain(mNativeObject, domain.ordinal());
         return this;
     }
 
@@ -326,6 +355,18 @@ public class MaterialBuilder {
     }
 
     @NonNull
+    public MaterialBuilder refractionMode(RefractionMode mode) {
+        nMaterialBuilderRefractionMode(mNativeObject, mode.ordinal());
+        return this;
+    }
+
+    @NonNull
+    public MaterialBuilder refractionType(RefractionType type) {
+        nMaterialBuilderRefractionType(mNativeObject, type.ordinal());
+        return this;
+    }
+
+    @NonNull
     public MaterialBuilder clearCoatIorChange(boolean clearCoatIorChange) {
         nMaterialBuilderClearCoatIorChange(mNativeObject, clearCoatIorChange);
         return this;
@@ -344,8 +385,8 @@ public class MaterialBuilder {
     }
 
     @NonNull
-    public MaterialBuilder specularAmbientOcclusion(boolean specularAO) {
-        nMaterialBuilderSpecularAmbientOcclusion(mNativeObject, specularAO);
+    public MaterialBuilder specularAmbientOcclusion(SpecularAmbientOcclusion specularAO) {
+        nMaterialBuilderSpecularAmbientOcclusion(mNativeObject, specularAO.ordinal());
         return this;
     }
 
@@ -374,7 +415,7 @@ public class MaterialBuilder {
     }
 
     @NonNull
-    public MaterialBuilder variantFilter(byte variantFilter) {
+    public MaterialBuilder variantFilter(int variantFilter) {
         nMaterialBuilderVariantFilter(mNativeObject, variantFilter);
         return this;
     }
@@ -419,6 +460,7 @@ public class MaterialBuilder {
     private static native void nDestroyPackage(long nativePackage);
 
     private static native void nMaterialBuilderName(long nativeBuilder, String name);
+    private static native void nMaterialBuilderMaterialDomain(long nativeBuilder, int domain);
     private static native void nMaterialBuilderShading(long nativeBuilder, int shading);
     private static native void nMaterialBuilderInterpolation(long nativeBuilder, int interpolation);
     private static native void nMaterialBuilderUniformParameter(long nativeBuilder, int type,
@@ -450,17 +492,19 @@ public class MaterialBuilder {
             float variance);
     private static native void nMaterialBuilderSpecularAntiAliasingThreshold(long mNativeObject,
             float threshold);
+    private static native void nMaterialBuilderRefractionMode(long nativeBuilder, int mode);
+    private static native void nMaterialBuilderRefractionType(long nativeBuilder, int type);
     private static native void nMaterialBuilderClearCoatIorChange(long mNativeObject,
             boolean clearCoatIorChange);
     private static native void nMaterialBuilderFlipUV(long nativeBuilder, boolean flipUV);
     private static native void nMaterialBuilderMultiBounceAmbientOcclusion(long nativeBuilder,
             boolean multiBounceAO);
     private static native void nMaterialBuilderSpecularAmbientOcclusion(long nativeBuilder,
-            boolean specularAO);
+            int specularAO);
     private static native void nMaterialBuilderTransparencyMode(long nativeBuilder, int mode);
     private static native void nMaterialBuilderPlatform(long nativeBuilder, int platform);
     private static native void nMaterialBuilderTargetApi(long nativeBuilder, int api);
     private static native void nMaterialBuilderOptimization(long nativeBuilder, int optimization);
     private static native void nMaterialBuilderVariantFilter(long nativeBuilder,
-            byte variantFilter);
+            int variantFilter);
 }

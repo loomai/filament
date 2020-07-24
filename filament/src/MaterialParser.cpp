@@ -49,11 +49,11 @@ MaterialParser::MaterialParserDetails::MaterialParserDetails(Backend backend, co
     switch (backend) {
         case Backend::OPENGL:
             mMaterialTag = ChunkType::MaterialGlsl;
-            mDictionaryTag = ChunkType::DictionaryGlsl;
+            mDictionaryTag = ChunkType::DictionaryText;
             break;
         case Backend::METAL:
             mMaterialTag = ChunkType::MaterialMetal;
-            mDictionaryTag = ChunkType::DictionaryMetal;
+            mDictionaryTag = ChunkType::DictionaryText;
             break;
         case Backend::VULKAN:
             mMaterialTag = ChunkType::MaterialSpirv;
@@ -62,7 +62,7 @@ MaterialParser::MaterialParserDetails::MaterialParserDetails(Backend backend, co
         default:
             // this is for testing purpose -- for e.g.: with the NoopDriver
             mMaterialTag = ChunkType::MaterialGlsl;
-            mDictionaryTag = ChunkType::DictionaryGlsl;
+            mDictionaryTag = ChunkType::DictionaryText;
             break;
     }
 }
@@ -92,20 +92,20 @@ ChunkContainer const& MaterialParser::getChunkContainer() const noexcept {
     return mImpl.mChunkContainer;
 }
 
-bool MaterialParser::parse() noexcept {
+MaterialParser::ParseResult MaterialParser::parse() noexcept {
     ChunkContainer& cc = getChunkContainer();
     if (cc.parse()) {
         if (!cc.hasChunk(mImpl.mMaterialTag) || !cc.hasChunk(mImpl.mDictionaryTag)) {
-            return false;
+            return ParseResult::ERROR_MISSING_BACKEND;
         }
         if (!DictionaryReader::unflatten(cc, mImpl.mDictionaryTag, mImpl.mBlobDictionary)) {
-            return false;
+            return ParseResult::ERROR_OTHER;
         }
         if (!mImpl.mMaterialChunk.readIndex(mImpl.mMaterialTag)) {
-            return false;
+            return ParseResult::ERROR_OTHER;
         }
     }
-    return true;
+    return ParseResult::SUCCESS;
 }
 
 // Accessors

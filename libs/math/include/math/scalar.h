@@ -17,8 +17,6 @@
 #ifndef TNT_MATH_SCALAR_H
 #define TNT_MATH_SCALAR_H
 
-#include <algorithm>
-#include <cmath>
 #include <math/compiler.h>
 
 namespace filament {
@@ -39,13 +37,23 @@ constexpr const double F_SQRT2    = 1.41421356237309504880168872420969808;
 constexpr const double F_SQRT1_2  = 0.707106781186547524400844362104849039;
 
 template<typename T>
-inline constexpr T MATH_PURE saturate(T v) noexcept {
-    return T(std::min(T(1), std::max(T(0), v)));
+inline constexpr T MATH_PURE min(T a, T b) noexcept {
+    return a < b ? a : b;
+}
+
+template<typename T>
+inline constexpr T MATH_PURE max(T a, T b) noexcept {
+    return a > b ? a : b;
 }
 
 template<typename T>
 inline constexpr T MATH_PURE clamp(T v, T min, T max) noexcept {
-    return T(std::min(max, std::max(min, v)));
+    return T(math::min(max, math::max(min, v)));
+}
+
+template<typename T>
+inline constexpr T MATH_PURE saturate(T v) noexcept {
+    return clamp(v, T(0), T(1));
 }
 
 template<typename T>
@@ -56,6 +64,12 @@ inline constexpr T MATH_PURE mix(T x, T y, T a) noexcept {
 template<typename T>
 inline constexpr T MATH_PURE lerp(T x, T y, T a) noexcept {
     return mix(x, y, a);
+}
+
+template<typename T>
+inline constexpr T MATH_PURE smoothstep(T e0, T e1, T x) noexcept {
+    T t = clamp((x - e0) / (e1 - e0), T(0), T(1));
+    return t * t * (T(3) - T(2) * t);
 }
 
 template<typename T>

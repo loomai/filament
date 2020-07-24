@@ -20,6 +20,8 @@
 #include <backend/DriverEnums.h>
 #include <backend/PixelBufferDescriptor.h>
 
+#include <functional>
+
 namespace filament {
 namespace backend {
 
@@ -35,6 +37,11 @@ public:
     explicit TextureReshaper(TextureFormat requestedFormat) noexcept;
 
     /**
+     * Returns true if the TextureFormat requires reshaping.
+     */
+    bool needsReshaping() const noexcept { return mNeedsReshaping; }
+
+    /**
      * Returns the graphics API-native TextureFormat that pixels will be reshaped into.
      * If the format does not need reshaping, the original requestedFormat is returned.
      */
@@ -46,15 +53,15 @@ public:
      * @param p The pixel buffer to reshape.
      * @return A new PixelBufferDescriptor containing the reshaped pixels.
      */
-    PixelBufferDescriptor reshape(PixelBufferDescriptor&& p) const;
+    PixelBufferDescriptor reshape(PixelBufferDescriptor& p) const;
 
     static bool canReshapeTextureFormat(TextureFormat format) noexcept;
 
 private:
 
-    std::function<PixelBufferDescriptor(PixelBufferDescriptor&& p)> reshapeFunction =
-            [](PixelBufferDescriptor&& p){ return std::move(p); };
-    TextureFormat reshapedFormat;
+    std::function<PixelBufferDescriptor(PixelBufferDescriptor& p)> mReshapeFunction;
+    TextureFormat mReshapedFormat;
+    bool mNeedsReshaping;
 
 };
 

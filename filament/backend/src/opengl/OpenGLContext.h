@@ -85,13 +85,12 @@ public:
     inline void depthMask(GLboolean flag) noexcept;
     inline void depthFunc(GLenum func) noexcept;
     inline void polygonOffset(GLfloat factor, GLfloat units) noexcept;
+    inline void beginQuery(GLenum target, GLuint query) noexcept;
+    inline void endQuery(GLenum target) noexcept;
+    inline GLuint getQuery(GLenum target) noexcept;
 
     inline void setScissor(GLint left, GLint bottom, GLsizei width, GLsizei height) noexcept;
     inline void viewport(GLint left, GLint bottom, GLsizei width, GLsizei height) noexcept;
-
-    inline void setClearColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) noexcept;
-    inline void setClearDepth(GLfloat depth) noexcept;
-    inline void setClearStencil(GLint stencil) noexcept;
 
     void deleteBuffers(GLsizei n, const GLuint* buffers, GLenum target) noexcept;
     void deleteVextexArrays(GLsizei n, const GLuint* arrays) noexcept;
@@ -124,6 +123,8 @@ public:
         bool KHR_debug = false;
         bool EXT_texture_sRGB = false;
         bool EXT_texture_compression_s3tc_srgb = false;
+        bool EXT_disjoint_timer_query = false;
+        bool EXT_shader_framebuffer_fetch = false;
     } ext;
 
     struct {
@@ -134,10 +135,6 @@ public:
         // Some drivers seem to not store the GL_ELEMENT_ARRAY_BUFFER binding
         // in the VAO state.
         bool vao_doesnt_store_element_array_buffer_binding = false;
-
-        // On some drivers, glClear() cancels glInvalidateFrameBuffer() which results
-        // in extra GPU memory loads.
-        bool clears_hurt_performance = false;
 
         // Some drivers have gl state issues when drawing from shared contexts
         bool disable_shared_context_draws = false;
@@ -153,6 +150,9 @@ public:
         // Some drivers declare GL_EXT_texture_filter_anisotropic but don't support
         // calling glSamplerParameter() with GL_TEXTURE_MAX_ANISOTROPY_EXT
         bool disable_texture_filter_anisotropic = false;
+
+        // Some drivers don't implement timer queries correctly
+        bool dont_use_timer_query = false;
     } bugs;
 
     // state getters -- as needed.
@@ -199,7 +199,7 @@ private:
         struct PolygonOffset {
             GLfloat factor = 0;
             GLfloat units = 0;
-            bool operator != (PolygonOffset const& rhs) noexcept {
+            bool operator != (PolygonOffset const& rhs) const noexcept {
                 return factor != rhs.factor || units != rhs.units;
             }
         } polygonOffset;
@@ -225,7 +225,7 @@ private:
                 GLuint sampler = 0;
                 struct {
                     GLuint texture_id = 0;
-                } targets[5];
+                } targets[6];  // this must match getIndexForTextureTarget()
             } units[MAX_TEXTURE_UNIT_COUNT];
         } textures;
 
@@ -249,10 +249,8 @@ private:
         } window;
 
         struct {
-            math::float4 color = {};
-            GLfloat depth = 1.0f;
-            GLint stencil = 0;
-        } clears;
+            GLuint timer = -1u;
+        } queries;
     } state;
 
     RenderPrimitive mDefaultVAO;
@@ -273,12 +271,14 @@ private:
 // ------------------------------------------------------------------------------------------------
 
 constexpr size_t OpenGLContext::getIndexForTextureTarget(GLuint target) noexcept {
+    // this must match state.textures[].targets[]
     switch (target) {
         case GL_TEXTURE_2D:             return 0;
         case GL_TEXTURE_2D_ARRAY:       return 1;
         case GL_TEXTURE_CUBE_MAP:       return 2;
         case GL_TEXTURE_2D_MULTISAMPLE: return 3;
         case GL_TEXTURE_EXTERNAL_OES:   return 4;
+        case GL_TEXTURE_3D:             return 5;
         default:                        return 0;
     }
 }
@@ -355,25 +355,6 @@ void OpenGLContext::viewport(GLint left, GLint bottom, GLsizei width, GLsizei he
     vec4gli viewport(left, bottom, width, height);
     update_state(state.window.viewport, viewport, [&]() {
         glViewport(left, bottom, width, height);
-    });
-}
-
-void OpenGLContext::setClearColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) noexcept {
-    math::float4 color(r, g, b, a);
-    update_state(state.clears.color, color, [&]() {
-        glClearColor(r, g, b, a);
-    });
-}
-
-void OpenGLContext::setClearDepth(GLfloat depth) noexcept {
-    update_state(state.clears.depth, depth, [&]() {
-        glClearDepthf(depth);
-    });
-}
-
-void OpenGLContext::setClearStencil(GLint stencil) noexcept {
-    update_state(state.clears.stencil, stencil, [&]() {
-        glClearStencil(stencil);
     });
 }
 
@@ -557,6 +538,40 @@ void OpenGLContext::polygonOffset(GLfloat factor, GLfloat units) noexcept {
     });
 }
 
+void OpenGLContext::beginQuery(GLenum target, GLuint query) noexcept {
+    switch (target) {
+        case GL_TIME_ELAPSED:
+            if (state.queries.timer != -1u) {
+                // this is an error
+                break;
+            }
+            state.queries.timer = query;
+            break;
+        default:
+            return;
+    }
+    glBeginQuery(target, query);
+}
+
+void OpenGLContext::endQuery(GLenum target) noexcept {
+    switch (target) {
+        case GL_TIME_ELAPSED:
+            state.queries.timer = -1u;
+            break;
+        default:
+            return;
+    }
+    glEndQuery(target);
+}
+
+GLuint OpenGLContext::getQuery(GLenum target) noexcept {
+    switch (target) {
+        case GL_TIME_ELAPSED:
+            return state.queries.timer;
+        default:
+            return 0;
+    }
+}
 } // namesapce filament
 
 #endif //TNT_FILAMENT_BACKEND_OPENGLCONTEXT_H

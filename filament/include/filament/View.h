@@ -26,15 +26,16 @@
 
 #include <utils/compiler.h>
 
-#include <math/vec2.h>
-#include <math/vec3.h>
+#include <math/mathfwd.h>
 
 namespace filament {
 
 class Camera;
+class ColorGrading;
 class MaterialInstance;
 class RenderTarget;
 class Scene;
+class Texture;
 class Viewport;
 
 /**
@@ -62,6 +63,18 @@ class UTILS_PUBLIC View : public FilamentAPI {
 public:
     using TargetBufferFlags = backend::TargetBufferFlags;
 
+    enum class QualityLevel : uint8_t {
+        LOW,
+        MEDIUM,
+        HIGH,
+        ULTRA
+    };
+
+    enum class BlendMode : uint8_t {
+        OPAQUE,
+        TRANSLUCENT
+    };
+
     /**
      * Dynamic resolution can be used to either reach a desired target frame rate
      * by lowering the resolution of a View, or to increase the quality when the
@@ -76,50 +89,102 @@ public:
      * enabled:   enable or disables dynamic resolution on a View
      * homogeneousScaling: by default the system scales the major axis first. Set this to true
      *                     to force homogeneous scaling.
-     * scaleRate: rate at which the scale will change to reach the target frame rate
-     *            This value can be computed as 1 / N, where N is the number of frames
-     *            needed to reach 64% of the target scale factor.
-     *            Higher values make the dynamic resolution react faster.
-     * targetFrameTimeMilli: desired frame time in milliseconds
-     * headRoomRatio: additional headroom for the GPU as a ratio of the targetFrameTime.
-     *                Useful for taking into account constant costs like post-processing or
-     *                GPU drivers on different platforms.
-     * history:   History size. higher values, tend to filter more (clamped to 30)
      * minScale:  the minimum scale in X and Y this View should use
      * maxScale:  the maximum scale in X and Y this View should use
+     * quality:   upscaling quality.
+     *            LOW: 1 bilinear tap, Medium: 4 bilinear taps, High: 9 bilinear taps (tent)
      *
      * \note
      * Dynamic resolution is only supported on platforms where the time to render
      * a frame can be measured accurately. Dynamic resolution is currently only
      * supported on Android.
+     *
+     * @see Renderer::FrameRateOptions
+     *
      */
     struct DynamicResolutionOptions {
-        DynamicResolutionOptions() = default;
-
-        DynamicResolutionOptions(bool enabled, float scaleRate,
-                math::float2 minScale, math::float2 maxScale)
-                : minScale(minScale), maxScale(maxScale),
-                  scaleRate(scaleRate), enabled(enabled) {
-            // this one exists for backward compatibility
-        }
-
-        explicit DynamicResolutionOptions(bool enabled) : enabled(enabled) { }
-
         math::float2 minScale = math::float2(0.5f);     //!< minimum scale factors in x and y
         math::float2 maxScale = math::float2(1.0f);     //!< maximum scale factors in x and y
-        float scaleRate = 0.125f;                       //!< rate at which the scale will change
-        float targetFrameTimeMilli = 1000.0f / 60.0f;   //!< desired frame time, or budget.
-        float headRoomRatio = 0.0f;                     //!< additional headroom for the GPU
-        uint8_t history = 9;                            //!< history size
         bool enabled = false;                           //!< enable or disable dynamic resolution
         bool homogeneousScaling = false;                //!< set to true to force homogeneous scaling
+        QualityLevel quality = QualityLevel::LOW;       //!< Upscaling quality
     };
 
-    enum class QualityLevel : int8_t {
-        LOW,
-        MEDIUM,
-        HIGH,
-        ULTRA
+    /**
+     * Options to control the bloom effect
+     *
+     * enabled:     Enable or disable the bloom post-processing effect. Disabled by default.
+     * levels:      Number of successive blurs to achieve the blur effect, the minimum is 3 and the
+     *              maximum is 12. This value together with resolution influences the spread of the
+     *              blur effect. This value can be silently reduced to accommodate the original
+     *              image size.
+     * resolution:  Resolution of bloom's minor axis. The minimum value is 2^levels and the
+     *              the maximum is lower of the original resolution and 4096. This parameter is
+     *              silently clamped to the minimum and maximum.
+     *              It is highly recommended that this value be smaller than the target resolution
+     *              after dynamic resolution is applied (horizontally and vertically).
+     * strength:    how much of the bloom is added to the original image. Between 0 and 1.
+     * blendMode:   Whether the bloom effect is purely additive (false) or mixed with the original
+     *              image (true).
+     * anamorphism: Bloom's aspect ratio (x/y), for artistic purposes.
+     * threshold:   When enabled, a threshold at 1.0 is applied on the source image, this is
+     *              useful for artistic reasons and is usually needed when a dirt texture is used.
+     * dirt:        A dirt/scratch/smudges texture (that can be RGB), which gets added to the
+     *              bloom effect. Smudges are visible where bloom occurs. Threshold must be
+     *              enabled for the dirt effect to work properly.
+     * dirtStrength: Strength of the dirt texture.
+     */
+    struct BloomOptions {
+        enum class BlendMode : uint8_t {
+            ADD,           //!< Bloom is modulated by the strength parameter and added to the scene
+            INTERPOLATE    //!< Bloom is interpolated with the scene using the strength parameter
+        };
+        Texture* dirt = nullptr;                //!< user provided dirt texture
+        float dirtStrength = 0.2f;              //!< strength of the dirt texture
+        float strength = 0.10f;                 //!< bloom's strength between 0.0 and 1.0
+        uint32_t resolution = 360;              //!< resolution of minor axis (2^levels to 4096)
+        float anamorphism = 1.0f;               //!< bloom x/y aspect-ratio (1/32 to 32)
+        uint8_t levels = 6;                     //!< number of blur levels (3 to 12)
+        BlendMode blendMode = BlendMode::ADD;   //!< how the bloom effect is applied
+        bool threshold = true;                  //!< whether to threshold the source
+        bool enabled = false;                   //!< enable or disable bloom
+    };
+
+    /**
+     * Options to control fog in the scene
+     */
+    struct FogOptions {
+        float distance = 0.0f;              //!< distance in world units from the camera where the fog starts ( >= 0.0 )
+        float maximumOpacity = 1.0f;        //!< fog's maximum opacity between 0 and 1
+        float height = 0.0f;                //!< fog's floor in world units
+        float heightFalloff = 1.0f;         //!< how fast fog dissipates with altitude
+        LinearColor color{0.5f};            //!< fog's color (linear), see fogColorFromIbl
+        float density = 0.1f;               //!< fog's density at altitude given by 'height'
+        float inScatteringStart = 0.0f;     //!< distance in world units from the camera where in-scattering starts
+        float inScatteringSize = -1.0f;     //!< size of in-scattering (>=0 to activate). Good values are >> 1 (e.g. ~10 - 100).
+        bool fogColorFromIbl = false;       //!< Fog color will be modulated by the IBL color in the view direction.
+        bool enabled = false;               //!< enable or disable fog
+    };
+
+    /**
+     * Options to control Depth of Field (DoF) effect in the scene.
+     */
+    struct DepthOfFieldOptions {
+        float focusDistance = 10.0f;        //!< focus distance in world units
+        float blurScale = 1.0f;             //!< a scale factor for the amount of blur
+        float maxApertureDiameter = 0.01f;  //!< maximum aperture diameter in meters (zero to disable rotation)
+        bool enabled = false;               //!< enable or disable depth of field effect
+    };
+
+    /**
+     * Options to control the vignetting effect.
+     */
+    struct VignetteOptions {
+        float midPoint = 0.5f;                      //!< high values restrict the vignette closer to the corners, between 0 and 1
+        float roundness = 0.5f;                     //!< controls the shape of the vignette, from a rounded rectangle (0.0), to an oval (0.5), to a circle (1.0)
+        float feather = 0.5f;                       //!< softening amount of the vignette effect, between 0 and 1
+        LinearColorA color{0.0f, 0.0f, 0.0f, 1.0f}; //!< color of the vignette effect, alpha is currently ignored
+        bool enabled = false;                       //!< enables or disables the vignette effect
     };
 
     /**
@@ -146,10 +211,12 @@ public:
      */
     struct AmbientOcclusionOptions {
         float radius = 0.3f;    //!< Ambient Occlusion radius in meters, between 0 and ~10.
-        float bias = 0.0001f;   //!< Self-occlusion bias in meters. Use to avoid self-occlusion. Between 0 and a few mm.
-        float power = 0.0f;     //!< Controls ambient occlusion's contrast. Between 0 (linear) and 1 (squared)
-        float resolution = 0.5; //!< How each dimension of the AO buffer is scaled. Must be positive and <= 1.
-        float intensity = 1.0;  //!< Strength of the Ambient Occlusion effect.
+        float power = 1.0f;     //!< Controls ambient occlusion's contrast. Must be positive.
+        float bias = 0.0005f;   //!< Self-occlusion bias in meters. Use to avoid self-occlusion. Between 0 and a few mm.
+        float resolution = 0.5f;//!< How each dimension of the AO buffer is scaled. Must be either 0.5 or 1.0.
+        float intensity = 1.0f; //!< Strength of the Ambient Occlusion effect.
+        QualityLevel quality = QualityLevel::LOW; //!< affects # of samples used for AO.
+        QualityLevel upsampling = QualityLevel::LOW; //!< affects AO buffer upsampling quality.
     };
 
     /**
@@ -169,13 +236,6 @@ public:
         FXAA = 1    //!< FXAA is a low-quality but very efficient type of anti-aliasing. (default).
     };
 
-    /** @see setDepthPrepass */
-    enum class DepthPrepass : int8_t {
-        DEFAULT = -1,
-        DISABLED,
-        ENABLED,
-    };
-
     /**
      * List of available post-processing dithering techniques.
      */
@@ -186,8 +246,10 @@ public:
 
     /**
      * List of available tone-mapping operators
+     *
+     * @deprecated See ColorGrading
      */
-    enum class ToneMapping : uint8_t {
+    enum class UTILS_DEPRECATED ToneMapping : uint8_t {
         LINEAR = 0,     //!< Linear tone mapping (i.e. no tone mapping)
         ACES = 1,       //!< ACES tone mapping
     };
@@ -219,34 +281,6 @@ public:
      * @return ambient occlusion options currently set.
      */
     AmbientOcclusionOptions const& getAmbientOcclusionOptions() const noexcept;
-
-    /**
-     * Sets whether this view is rendered with or without a depth pre-pass.
-     *
-     * NOTE: this setting is ignored and will be removed in future versions of Filament.
-     *
-     * By default, the system picks the most appropriate strategy, this method lets the
-     * application override that strategy.
-     *
-     * When the depth pre-pass is enabled, the renderer will first draw all objects in the
-     * depth buffer from front to back, and then draw the objects again but sorted to minimize
-     * state changes. With the depth pre-pass disabled, objects are drawn only once, but it may
-     * result in more state changes or more overdraw.
-     *
-     * The best strategy may depend on the scene and/or GPU.
-     *
-     * @param prepass   DepthPrepass::DEFAULT uses the most appropriate strategy,
-     *                  DepthPrepass::DISABLED disables the depth pre-pass,
-     *                  DepthPrepass::ENABLE enables the depth pre-pass.
-     */
-    void setDepthPrepass(DepthPrepass prepass) noexcept;
-
-    /**
-     * Checks if this view is rendered with a depth-only prepass.
-     *
-     * @return the value set by setDepthPass().
-     */
-    DepthPrepass getDepthPrepass() const noexcept;
 
     /**
      * Sets the View's name. Only useful for debugging.
@@ -341,37 +375,19 @@ public:
     Viewport const& getViewport() const noexcept;
 
     /**
-     * Sets the color used to clear the Viewport when rendering this View.
-     * Defaults to black.
+     * Sets the blending mode used to draw the view into the SwapChain.
      *
-     * @param clearColor The color to use to clear the Viewport.
-     * @see setClearTargets
+     * @param blendMode either BlendMode::OPAQUE or BlendMode::TRANSLUCENT
+      * @see getBlendMode
      */
-    void setClearColor(LinearColorA const& clearColor) noexcept;
+    void setBlendMode(BlendMode blendMode) noexcept;
 
-    /**
-     * Returns the View clear color.
-     * @return A constant reference to the View's clear color.
-     */
-    LinearColorA const& getClearColor() const noexcept;
-
-    /**
-     * Sets which targets to clear (default: true, true, false)
-     * @param color     Clear the color buffer. The color buffer is cleared with the color set in
-     *                  setClearColor().
-     * @param depth     Clear the depth buffer. The depth buffer is cleared with an implementation
-     *                  defined value representing the farthest depth.
-     *
-     *                  @note
-     *                  Generally the depth clear value is 1.0, but you shouldn't rely on this
-     *                  because filament may use "inverted depth" in some situations.
-     *
-     *
-     * @param stencil   Clear the stencil buffer. The stencil buffer is cleared with 0.
-     *
-     * @see setClearColor
-     */
-    void setClearTargets(bool color, bool depth, bool stencil) noexcept;
+     /**
+      *
+      * @return blending mode set by setBlendMode
+      * @see setBlendMode
+      */
+    BlendMode getBlendMode() const noexcept;
 
     /**
      * Sets which layers are visible.
@@ -410,13 +426,8 @@ public:
      * SwapChain associated with the engine.
      *
      * @param renderTarget Render target associated with view, or nullptr for the swap chain.
-     * @param discard Buffers that need to be discarded before rendering.
      */
-    void setRenderTarget(RenderTarget* renderTarget,
-            TargetBufferFlags discard = TargetBufferFlags::ALL) noexcept;
-
-    //! @deprecated Please use the other overload and pass nullptr for the renderTarget.
-    void setRenderTarget(TargetBufferFlags discard = TargetBufferFlags::ALL) noexcept;
+    void setRenderTarget(RenderTarget* renderTarget) noexcept;
 
     /**
      * Gets the offscreen render target associated with this view.
@@ -476,14 +487,101 @@ public:
      * Enables or disables tone-mapping in the post-processing stage. Enabled by default.
      *
      * @param type Tone-mapping function.
+     *
+     * @deprecated Use setColorGrading instead
+     * @see setColorGrading
      */
+    UTILS_DEPRECATED
     void setToneMapping(ToneMapping type) noexcept;
 
     /**
      * Returns the tone-mapping function.
      * @return tone-mapping function.
+     *
+     * @deprecated Use getColorGrading instead
+     * @see getColorGrading
      */
+    UTILS_DEPRECATED
     ToneMapping getToneMapping() const noexcept;
+
+    /**
+     * Sets this View's color grading transforms.
+     *
+     * @param colorGrading Associate the specified ColorGrading to this View. A ColorGrading can be
+     *                     associated to several View instances.\n
+     *                     \p colorGrading can be nullptr to dissociate the currently set
+     *                     ColorGrading from this View. Doing so will revert to the use of the
+     *                     default color grading transforms.\n
+     *                     The View doesn't take ownership of the ColorGrading pointer (which
+     *                     acts as a reference).
+     *
+     * @note
+     *  There is no reference-counting.
+     *  Make sure to dissociate a ColorGrading from all Views before destroying it.
+     */
+    void setColorGrading(ColorGrading* colorGrading) noexcept;
+
+    /**
+     * Returns the color grading transforms currently associated to this view.
+     * @return A pointer to the ColorGrading associated to this View.
+     */
+    const ColorGrading* getColorGrading() const noexcept;
+
+    /**
+     * Enables or disables bloom in the post-processing stage. Disabled by default.
+     *
+     * @param options options
+     */
+    void setBloomOptions(BloomOptions options) noexcept;
+
+    /**
+     * Queries the bloom options.
+     *
+     * @return the current bloom options for this view.
+     */
+    BloomOptions getBloomOptions() const noexcept;
+
+    /**
+     * Enables or disables fog. Disabled by default.
+     *
+     * @param options options
+     */
+    void setFogOptions(FogOptions options) noexcept;
+
+    /**
+     * Queries the fog options.
+     *
+     * @return the current fog options for this view.
+     */
+    FogOptions getFogOptions() const noexcept;
+
+    /**
+     * Enables or disables Depth of Field. Disabled by default.
+     *
+     * @param options options
+     */
+    void setDepthOfFieldOptions(DepthOfFieldOptions options) noexcept;
+
+    /**
+     * Queries the depth of field options.
+     *
+     * @return the current depth of field options for this view.
+     */
+    DepthOfFieldOptions getDepthOfFieldOptions() const noexcept;
+
+    /**
+     * Enables or disables the vignetted effect in the post-processing stage. Disabled by default.
+     *
+     * @param options options
+     */
+    void setVignetteOptions(VignetteOptions options) noexcept;
+
+    /**
+     * Queries the vignette options.
+     *
+     * @return the current vignette options for this view.
+     */
+    VignetteOptions getVignetteOptions() const noexcept;
 
     /**
      * Enables or disables dithering in the post-processing stage. Enabled by default.
@@ -553,6 +651,7 @@ public:
      * Enables or disables post processing. Enabled by default.
      *
      * Post-processing includes:
+     *  - Bloom
      *  - Tone-mapping & gamma encoding
      *  - Dithering
      *  - MSAA
@@ -564,7 +663,7 @@ public:
      *
      * @param enabled true enables post processing, false disables it.
      *
-     * @see setToneMapping, setAntiAliasing, setDithering, setSampleCount
+     * @see setBloomOptions, setColorGrading, setAntiAliasing, setDithering, setSampleCount
      */
     void setPostProcessingEnabled(bool enabled) noexcept;
 

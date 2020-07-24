@@ -38,7 +38,8 @@ using namespace utils;
 namespace filament {
 namespace matdbg {
 
-static const int alignment = 24;
+constexpr int alignment = 32;
+constexpr int shortAlignment = 12;
 
 static string arraySizeToString(uint64_t size) {
     if (size > 1) {
@@ -104,6 +105,7 @@ static bool printMaterial(ostream& text, const ChunkContainer& container) {
 
     text << "Shading:" << endl;
     printChunk<Shading, uint8_t>(text, container, MaterialShading, "Model: ");
+    printChunk<MaterialDomain, uint8_t>(text, container, ChunkType::MaterialDomain, "Material domain: ");
     printChunk<VertexDomain, uint8_t>(text, container, MaterialVertexDomain, "Vertex domain: ");
     printChunk<Interpolation, uint8_t>(text, container, MaterialInterpolation, "Interpolation: ");
     printChunk<bool, bool>(text, container, MaterialShadowMultiplier, "Shadow multiply: ");
@@ -207,9 +209,9 @@ static bool printParametersInfo(ostream& text, const ChunkContainer& container) 
 
         text << "    "
                   << setw(alignment) << fieldName.c_str()
-                  << setw(alignment) << toString(UniformType(fieldType))
+                  << setw(shortAlignment) << toString(UniformType(fieldType))
                   << arraySizeToString(fieldSize)
-                  << setw(10) << toString(Precision(fieldPrecision))
+                  << setw(shortAlignment) << toString(Precision(fieldPrecision))
                   << endl;
     }
 
@@ -241,8 +243,8 @@ static bool printParametersInfo(ostream& text, const ChunkContainer& container) 
 
         text << "    "
                 << setw(alignment) << fieldName.c_str()
-                << setw(alignment) << toString(SamplerType(fieldType))
-                << setw(10) << toString(Precision(fieldPrecision))
+                << setw(shortAlignment) << toString(SamplerType(fieldType))
+                << setw(shortAlignment) << toString(Precision(fieldPrecision))
                 << toString(SamplerFormat(fieldFormat))
                 << endl;
     }

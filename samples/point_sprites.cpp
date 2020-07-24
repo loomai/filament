@@ -21,6 +21,7 @@
 #include <filament/MaterialInstance.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
+#include <filament/Skybox.h>
 #include <filament/TransformManager.h>
 #include <filament/TextureSampler.h>
 #include <filament/VertexBuffer.h>
@@ -31,8 +32,8 @@
 #include <image/ImageSampler.h>
 #include <image/LinearImage.h>
 
-#include "../samples/app/Config.h"
-#include "../samples/app/FilamentApp.h"
+#include <filamentapp/Config.h>
+#include <filamentapp/FilamentApp.h>
 
 #include <cmath>
 
@@ -54,6 +55,8 @@ struct App {
     Material* mat;
     MaterialInstance* matInstance;
     Camera* cam;
+    Entity camera;
+    Skybox* skybox;
     Texture* tex;
     Entity renderable;
 };
@@ -152,18 +155,24 @@ void setup(App& app, Engine* engine, View* view, Scene* scene) {
             .build(*engine, app.renderable);
 
     scene->addEntity(app.renderable);
-    app.cam = engine->createCamera();
+    app.camera = utils::EntityManager::get().create();
+    app.cam = engine->createCamera(app.camera);
     view->setCamera(app.cam);
-    view->setClearColor({0.1, 0.125, 0.25, 1.0});
+
+    app.skybox = Skybox::Builder().color({0.1, 0.125, 0.25, 1.0}).build(*engine);
+    scene->setSkybox(app.skybox);
 };
 
 void cleanup(App& app, Engine* engine) {
+    engine->destroy(app.skybox);
     engine->destroy(app.renderable);
     engine->destroy(app.matInstance);
     engine->destroy(app.mat);
     engine->destroy(app.vb);
     engine->destroy(app.ib);
-    engine->destroy(app.cam);
+
+    engine->destroyCameraComponent(app.camera);
+    utils::EntityManager::get().destroy(app.camera);
 }
 
 void animate(App& app, Engine* engine, View* view, double now) {

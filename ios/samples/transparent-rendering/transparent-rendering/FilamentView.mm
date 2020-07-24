@@ -16,23 +16,25 @@
 
 #import "FilamentView.h"
 
-#import <filament/Engine.h>
-#import <filament/Renderer.h>
-#import <filament/Scene.h>
-#import <filament/View.h>
-#import <filament/RenderableManager.h>
-#import <filament/TransformManager.h>
+#include <filament/Camera.h>
+#include <filament/Engine.h>
+#include <filament/IndexBuffer.h>
+#include <filament/Material.h>
+#include <filament/RenderableManager.h>
+#include <filament/Renderer.h>
+#include <filament/Scene.h>
+#include <filament/SwapChain.h>
+#include <filament/TransformManager.h>
+#include <filament/VertexBuffer.h>
+#include <filament/View.h>
+#include <filament/Viewport.h>
+
+#include <utils/EntityManager.h>
 
 // These defines are set in the "Preprocessor Macros" build setting for each scheme.
 #if !FILAMENT_APP_USE_METAL && \
     !FILAMENT_APP_USE_OPENGL
 #error A valid FILAMENT_APP_USE_ backend define must be set.
-#endif
-
-#define METAL_AVAILABLE __has_include(<QuartzCore/CAMetalLayer.h>)
-
-#if !METAL_AVAILABLE && FILAMENT_APP_USE_METAL
-#error The iOS simulator does not support Metal.
 #endif
 
 using namespace filament;
@@ -156,10 +158,9 @@ static constexpr uint8_t BAKED_COLOR_PACKAGE[] = {
     filaView = engine->createView();
 
     // Set a transparent clear color.
-    filaView->setClearColor({0.0f, 0.0f, 0.0f, 0.0f});
+    renderer->setClearOptions({.clear = true});
 
     filaView->setPostProcessingEnabled(false);
-    filaView->setDepthPrepass(filament::View::DepthPrepass::DISABLED);
 
     app.vb = VertexBuffer::Builder()
         .vertexCount(3)

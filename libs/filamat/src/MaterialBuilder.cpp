@@ -62,7 +62,7 @@ inline void assertSingleTargetApi(MaterialBuilderBase::TargetApi api) {
     assert(bits && !(bits & bits - 1u));
 }
 
-void MaterialBuilderBase::prepare() {
+void MaterialBuilderBase::prepare(bool vulkanSemantics) {
     mCodeGenPermutations.clear();
     mShaderModels.reset();
 
@@ -78,6 +78,12 @@ void MaterialBuilderBase::prepare() {
     // OpenGL is a special case. If we're doing any optimization, then we need to go to Spir-V.
     TargetLanguage glTargetLanguage = mOptimization > MaterialBuilder::Optimization::PREPROCESSOR ?
             TargetLanguage::SPIRV : TargetLanguage::GLSL;
+    if (vulkanSemantics) {
+        // Currently GLSLPostProcessor.cpp is incapable of compiling SPIRV to GLSL without
+        // running the optimizer. For now we just activate the optimizer in that case.
+        mOptimization = MaterialBuilder::Optimization::PERFORMANCE;
+        glTargetLanguage = TargetLanguage::SPIRV;
+    }
 
     // Select OpenGL as the default TargetApi if none was specified.
     if (none(mTargetApi)) {
@@ -123,6 +129,11 @@ void MaterialBuilderBase::shutdown() {
 
 MaterialBuilder& MaterialBuilder::name(const char* name) noexcept {
     mMaterialName = CString(name);
+    return *this;
+}
+
+MaterialBuilder& MaterialBuilder::fileName(const char* fileName) noexcept {
+    mFileName = CString(fileName);
     return *this;
 }
 
@@ -210,12 +221,12 @@ MaterialBuilder& MaterialBuilder::materialDomain(MaterialDomain materialDomain) 
     return *this;
 }
 
-MaterialBuilder& MaterialBuilder::materialRefraction(RefractionMode refraction) noexcept {
+MaterialBuilder& MaterialBuilder::refractionMode(RefractionMode refraction) noexcept {
     mRefractionMode = refraction;
     return *this;
 }
 
-MaterialBuilder& MaterialBuilder::materialRefractionType(RefractionType refractionType) noexcept {
+MaterialBuilder& MaterialBuilder::refractionType(RefractionType refractionType) noexcept {
     mRefractionType = refractionType;
     return *this;
 }
@@ -303,7 +314,7 @@ MaterialBuilder& MaterialBuilder::multiBounceAmbientOcclusion(bool multiBounceAO
     return *this;
 }
 
-MaterialBuilder& MaterialBuilder::specularAmbientOcclusion(bool specularAO) noexcept {
+MaterialBuilder& MaterialBuilder::specularAmbientOcclusion(SpecularAmbientOcclusion specularAO) noexcept {
     mSpecularAO = specularAO;
     mSpecularAOSet = true;
     return *this;
@@ -344,6 +355,11 @@ MaterialBuilder& MaterialBuilder::variantFilter(uint8_t variantFilter) noexcept 
     return *this;
 }
 
+MaterialBuilder& MaterialBuilder::shaderDefine(const char* name, const char* value) noexcept {
+    mDefines.emplace_back(name, value);
+    return *this;
+}
+
 bool MaterialBuilder::hasExternalSampler() const noexcept {
     for (size_t i = 0, c = mParameterCount; i < c; i++) {
         auto const& param = mParameters[i];
@@ -355,7 +371,7 @@ bool MaterialBuilder::hasExternalSampler() const noexcept {
 }
 
 void MaterialBuilder::prepareToBuild(MaterialInfo& info) noexcept {
-    MaterialBuilderBase::prepare();
+    MaterialBuilderBase::prepare(mEnableFramebufferFetch);
 
     // Build the per-material sampler block and uniform block.
     filament::SamplerInterfaceBlock::Builder sbb;
@@ -468,8 +484,13 @@ bool MaterialBuilder::runSemanticAnalysis() noexcept {
 
     TargetApi targetApi = params.targetApi;
     assertSingleTargetApi(targetApi);
-    ShaderModel model = static_cast<ShaderModel>(params.shaderModel);
 
+    if (mEnableFramebufferFetch) {
+        // framebuffer fetch is only available with vulkan semantics
+        targetApi = TargetApi::VULKAN;
+    }
+
+    ShaderModel model = static_cast<ShaderModel>(params.shaderModel);
     std::string shaderCode = peek(ShaderType::VERTEX, params, mProperties);
     bool result = glslTools.analyzeVertexShader(shaderCode, model, mMaterialDomain, targetApi);
     if (!result) return false;
@@ -501,11 +522,23 @@ bool MaterialBuilder::checkLiteRequirements() noexcept {
     return true;
 }
 
-bool MaterialBuilder::ShaderCode::resolveIncludes(IncludeCallback callback) noexcept {
+bool MaterialBuilder::ShaderCode::resolveIncludes(IncludeCallback callback,
+        const utils::CString& fileName) noexcept {
     if (!mCode.empty()) {
-        if (!::filamat::resolveIncludes(utils::CString(""), mCode, callback)) {
+        ResolveOptions options {
+            .insertLineDirectives = true,
+            .insertLineDirectiveCheck = true
+        };
+        IncludeResult source {
+            .includeName = fileName,
+            .text = mCode,
+            .lineNumberOffset = getLineOffset(),
+            .name = utils::CString("")
+        };
+        if (!::filamat::resolveIncludes(source, callback, options)) {
             return false;
         }
+        mCode = source.text;
     }
 
     mIncludesResolved = true;
@@ -542,15 +575,17 @@ bool MaterialBuilder::generateShaders(const std::vector<Variant>& variants, Chun
     std::vector<TextEntry> glslEntries;
     std::vector<SpirvEntry> spirvEntries;
     std::vector<TextEntry> metalEntries;
-    LineDictionary glslDictionary;
+
+    // Dictionary used to compress text-based shading languages (GLSL and MSL).
+    LineDictionary textDictionary;
+
 #ifndef FILAMAT_LITE
     BlobDictionary spirvDictionary;
-    LineDictionary metalDictionary;
 #endif
     std::vector<uint32_t> spirv;
     std::string msl;
 
-    ShaderGenerator sg(mProperties, mVariables, mMaterialCode.getResolved(),
+    ShaderGenerator sg(mProperties, mVariables, mDefines, mMaterialCode.getResolved(),
             mMaterialCode.getLineOffset(), mMaterialVertexCode.getResolved(),
             mMaterialVertexCode.getLineOffset(), mMaterialDomain);
 
@@ -598,7 +633,18 @@ bool MaterialBuilder::generateShaders(const std::vector<Variant>& variants, Chun
             }
 
 #ifndef FILAMAT_LITE
-            bool ok = postProcessor.process(shader, v.stage, shaderModel, &shader, pSpirv, pMsl);
+
+            GLSLPostProcessor::Config config{
+                    .shaderType = v.stage,
+                    .shaderModel = shaderModel,
+                    .glsl = {}
+            };
+
+            if (mEnableFramebufferFetch) {
+                config.glsl.subpassInputToColorLocation.emplace_back(0, 0);
+            }
+
+            bool ok = postProcessor.process(shader, config, &shader, pSpirv, pMsl);
 #else
             bool ok = true;
 #endif
@@ -614,7 +660,7 @@ bool MaterialBuilder::generateShaders(const std::vector<Variant>& variants, Chun
 
                 glslEntry.stage = v.stage;
                 glslEntry.shader = shader;
-                glslDictionary.addText(glslEntry.shader);
+                textDictionary.addText(glslEntry.shader);
                 glslEntries.push_back(glslEntry);
             }
 
@@ -633,17 +679,19 @@ bool MaterialBuilder::generateShaders(const std::vector<Variant>& variants, Chun
                 metalEntry.shader = msl;
                 spirv.clear();
                 msl.clear();
-                metalDictionary.addText(metalEntry.shader);
+                textDictionary.addText(metalEntry.shader);
                 metalEntries.push_back(metalEntry);
             }
 #endif
         }
     }
 
-    // Emit GLSL chunks (TextDictionaryReader and MaterialTextChunk).
+    // Emit dictionary chunk (TextDictionaryReader and DictionaryTextChunk)
+    const auto& dictionaryChunk = container.addChild<filamat::DictionaryTextChunk>(
+            std::move(textDictionary), ChunkType::DictionaryText);
+
+    // Emit GLSL chunk (MaterialTextChunk).
     if (!glslEntries.empty()) {
-        const auto& dictionaryChunk = container.addChild<filamat::DictionaryTextChunk>(
-                std::move(glslDictionary), ChunkType::DictionaryGlsl);
         container.addChild<MaterialTextChunk>(std::move(glslEntries),
                 dictionaryChunk.getDictionary(), ChunkType::MaterialGlsl);
     }
@@ -656,16 +704,21 @@ bool MaterialBuilder::generateShaders(const std::vector<Variant>& variants, Chun
         container.addChild<MaterialSpirvChunk>(std::move(spirvEntries));
     }
 
-    // Emit Metal chunks (MetalDictionaryReader and MaterialMetalChunk).
+    // Emit Metal chunk (MaterialTextChunk).
     if (!metalEntries.empty()) {
-        const auto& dictionaryChunk = container.addChild<filamat::DictionaryTextChunk>(
-                std::move(metalDictionary), ChunkType::DictionaryMetal);
         container.addChild<MaterialTextChunk>(std::move(metalEntries),
                 dictionaryChunk.getDictionary(), ChunkType::MaterialMetal);
     }
 #endif
 
     return true;
+}
+
+MaterialBuilder& MaterialBuilder::enableFramebufferFetch() noexcept {
+    // This API is temporary, it is used to enable EXT_framebuffer_fetch for GLSL shaders,
+    // this is used sparingly by filament's post-processing stage.
+    mEnableFramebufferFetch = true;
+    return *this;
 }
 
 Package MaterialBuilder::build() noexcept {
@@ -677,8 +730,8 @@ Package MaterialBuilder::build() noexcept {
     }
 
     // Resolve all the #include directives within user code.
-    if (!mMaterialCode.resolveIncludes(mIncludeCallback) ||
-        !mMaterialVertexCode.resolveIncludes(mIncludeCallback)) {
+    if (!mMaterialCode.resolveIncludes(mIncludeCallback, mFileName) ||
+        !mMaterialVertexCode.resolveIncludes(mIncludeCallback, mFileName)) {
         return Package::invalidPackage();
     }
 
@@ -723,7 +776,7 @@ Package MaterialBuilder::build() noexcept {
 
 const std::string MaterialBuilder::peek(filament::backend::ShaderType type,
         const CodeGenParams& params, const PropertyList& properties) noexcept {
-    ShaderGenerator sg(properties, mVariables, mMaterialCode.getResolved(),
+    ShaderGenerator sg(properties, mVariables, mDefines, mMaterialCode.getResolved(),
             mMaterialCode.getLineOffset(), mMaterialVertexCode.getResolved(),
             mMaterialVertexCode.getLineOffset(), mMaterialDomain);
 

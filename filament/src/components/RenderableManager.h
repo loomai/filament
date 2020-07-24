@@ -39,7 +39,6 @@
 class FilamentTest_Bones_Test;
 
 namespace filament {
-namespace details {
 
 class FMaterialInstance;
 class FRenderPrimitive;
@@ -52,13 +51,16 @@ public:
 
     // TODO: consider renaming, this pertains to material variants, not strictly visibility.
     struct Visibility {
-        uint8_t priority    : 3;
-        bool castShadows    : 1;
-        bool receiveShadows : 1;
-        bool culling        : 1;
-        bool skinning       : 1;
-        bool morphing       : 1;
+        uint8_t priority                : 3;
+        bool castShadows                : 1;
+        bool receiveShadows             : 1;
+        bool culling                    : 1;
+        bool skinning                   : 1;
+        bool morphing                   : 1;
+        bool screenSpaceContactShadows  : 1;
     };
+
+    static_assert(sizeof(Visibility) == sizeof(uint16_t), "Visibility should be 16 bits");
 
     explicit FRenderableManager(FEngine& engine) noexcept;
     ~FRenderableManager();
@@ -103,6 +105,7 @@ public:
 
     inline void setLayerMask(Instance instance, uint8_t layerMask) noexcept;
     inline void setReceiveShadows(Instance instance, bool enable) noexcept;
+    inline void setScreenSpaceContactShadows(Instance instance, bool enable) noexcept;
     inline void setCulling(Instance instance, bool enable) noexcept;
     inline void setSkinning(Instance instance, bool enable) noexcept;
     inline void setMorphing(Instance instance, bool enable) noexcept;
@@ -252,6 +255,13 @@ void FRenderableManager::setReceiveShadows(Instance instance, bool enable) noexc
     }
 }
 
+void FRenderableManager::setScreenSpaceContactShadows(Instance instance, bool enable) noexcept {
+    if (instance) {
+        Visibility& visibility = mManager[instance].visibility;
+        visibility.screenSpaceContactShadows = enable;
+    }
+}
+
 void FRenderableManager::setCulling(Instance instance, bool enable) noexcept {
     if (instance) {
         Visibility& visibility = mManager[instance].visibility;
@@ -337,7 +347,6 @@ size_t FRenderableManager::getPrimitiveCount(Instance instance, uint8_t level) c
     return getRenderPrimitives(instance, level).size();
 }
 
-} // namespace details
 } // namespace filament
 
 #endif // TNT_FILAMENT_DETAILS_RENDERABLECOMPONENTMANAGER_H

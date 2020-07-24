@@ -2,6 +2,9 @@
 
 setlocal
 
+echo Disk info before building:
+call :ShowDiskInfo
+
 if "%GITHUB_WORKFLOW%" == "" (set RUNNING_LOCALLY=1)
 
 if "%TARGET%" == "" (
@@ -38,7 +41,7 @@ if "%TARGET%" == "release" (
 
 set VISUAL_STUDIO_VERSION="Enterprise"
 if "%RUNNING_LOCALLY%" == "1" (
-    set VISUAL_STUDIO_VERSION="Professional"
+    set VISUAL_STUDIO_VERSION="Community"
     set "PATH=%PATH%;C:\Program Files\7-Zip"
 )
 
@@ -48,16 +51,8 @@ if errorlevel 1 exit /b %errorlevel%
 msbuild /version
 cmake --version
 
-if "%BUILD_RELEASE%" == "1" (
-    :: /MT
-    call :BuildVariant mt "-DUSE_STATIC_CRT=ON" Release || exit /b
-
-    if "%BUILD_RELEASE_VARIANTS%" == "1" (
-        :: /MD
-        call :BuildVariant md "-DUSE_STATIC_CRT=OFF" Release || exit /b
-    )
-)
-
+:: Important: build debug builds first, when disk space is plentiful. Debug builds require
+:: significantly more temporary space.
 if "%BUILD_DEBUG%" == "1" (
     :: MTd
     call :BuildVariant mtd "-DUSE_STATIC_CRT=ON" Debug || exit /b
@@ -65,6 +60,16 @@ if "%BUILD_DEBUG%" == "1" (
     if "%BUILD_RELEASE_VARIANTS%" == "1" (
         :: MDd
         call :BuildVariant mdd "-DUSE_STATIC_CRT=OFF" Debug || exit /b
+    )
+)
+
+if "%BUILD_RELEASE%" == "1" (
+    :: /MT
+    call :BuildVariant mt "-DUSE_STATIC_CRT=ON" Release || exit /b
+
+    if "%BUILD_RELEASE_VARIANTS%" == "1" (
+        :: /MD
+        call :BuildVariant md "-DUSE_STATIC_CRT=OFF" Release || exit /b
     )
 )
 
@@ -92,16 +97,36 @@ set variant=%~1
 set flag=%~2
 set config=%~3
 
+echo Disk info before building variant: %variant%
+call :ShowDiskInfo
+
 mkdir out\cmake-%variant%
 cd out\cmake-%variant%
 if errorlevel 1 exit /b %errorlevel%
 
-cmake ..\.. -G "Visual Studio 16 2019" -A x64 %flag% -DCMAKE_INSTALL_PREFIX=..\%variant% || exit /b
+cmake ..\.. ^
+    -G "Visual Studio 16 2019" ^
+    -A x64 ^
+    %flag% ^
+    -DCMAKE_INSTALL_PREFIX=..\%variant% ^
+    -DFILAMENT_WINDOWS_CI_BUILD:BOOL=ON ^
+    -DFILAMENT_SUPPORTS_VULKAN=ON ^
+    || exit /b
 cmake --build . %INSTALL% --config %config% -- /m || exit /b
+
+echo Disk info after building variant: %variant%
+call :ShowDiskInfo
 
 cd ..\..
 
 :: Delete the cmake build folder, otherwise we run out of disk space on CI when
 :: building multiple variants.
 rd /s /q out\cmake-%variant%
+exit /b 0
+
+:: Helps debugging GitHub builds that run out of space
+:ShowDiskInfo
+echo =======================================================
+wmic logicaldisk get size,freespace,caption
+echo =======================================================
 exit /b 0

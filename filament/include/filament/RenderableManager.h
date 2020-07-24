@@ -26,9 +26,7 @@
 #include <utils/compiler.h>
 #include <utils/EntityInstance.h>
 
-#include <math/mat4.h>
-#include <math/vec3.h>
-#include <math/vec4.h>
+#include <math/mathfwd.h>
 
 #include <type_traits>
 
@@ -45,11 +43,9 @@ class MaterialInstance;
 class Renderer;
 class VertexBuffer;
 
-namespace details {
 class FEngine;
 class FRenderPrimitive;
 class FRenderableManager;
-} // namespace details
 
 /**
  * Factory and manager for \em renderables, which are entities that can be drawn.
@@ -231,6 +227,13 @@ public:
         Builder& receiveShadows(bool enable) noexcept;
 
         /**
+         * Controls if this renderable uses screen-space contact shadows. This is more
+         * expensive but can improve the quality of shadows, especially in large scenes.
+         * (off by default).
+         */
+        Builder& screenSpaceContactShadows(bool enable) noexcept;
+
+        /**
          * Enables GPU vertex skinning for up to 255 bones, 0 by default.
          *
          * Each vertex can be affected by up to 4 bones simultaneously. The attached
@@ -287,9 +290,9 @@ public:
         Result build(Engine& engine, utils::Entity entity);
 
     private:
-        friend class details::FEngine;
-        friend class details::FRenderPrimitive;
-        friend class details::FRenderableManager;
+        friend class FEngine;
+        friend class FRenderPrimitive;
+        friend class FRenderableManager;
         struct Entry {
             VertexBuffer* vertices = nullptr;
             IndexBuffer* indices = nullptr;
@@ -321,6 +324,7 @@ public:
      *
      * \see Builder::layerMask()
      * \see View::setVisibleLayers().
+     * \see RenderableManager::getLayerMask()
      */
     void setLayerMask(Instance instance, uint8_t select, uint8_t values) noexcept;
 
@@ -330,6 +334,13 @@ public:
      * \see Builder::priority().
      */
     void setPriority(Instance instance, uint8_t priority) noexcept;
+
+    /**
+     * Changes whether or not frustum culling is on.
+     *
+     * \see Builder::culling()
+     */
+    void setCulling(Instance instance, bool enable) noexcept;
 
     /**
      * Changes whether or not the renderable casts shadows.
@@ -344,6 +355,13 @@ public:
      * \see Builder::receiveShadows()
      */
     void setReceiveShadows(Instance instance, bool enable) noexcept;
+
+    /**
+     * Changes whether or not the renderable can use screen-space contact shadows.
+     *
+     * \see Builder::screenSpaceContactShadows()
+     */
+    void setScreenSpaceContactShadows(Instance instance, bool enable) noexcept;
 
     /**
      * Checks if the renderable can cast shadows.
@@ -383,6 +401,15 @@ public:
      * \see RenderableManager::setAxisAlignedBoundingBox()
      */
     const Box& getAxisAlignedBoundingBox(Instance instance) const noexcept;
+
+    /**
+     * Get the visibility bits.
+     *
+     * \see Builder::layerMask()
+     * \see View::setVisibleLayers().
+     * \see RenderableManager::getLayerMask()
+     */
+    uint8_t getLayerMask(Instance instance) const noexcept;
 
     /**
      * Gets the immutable number of primitives in the given renderable.

@@ -26,7 +26,7 @@
 
 #include <utils/compiler.h>
 
-#include <math/vec4.h>
+#include <math/mathfwd.h>
 
 #include <stdint.h>
 
@@ -39,10 +39,8 @@ namespace filament {
 class Texture;
 class TextureSampler;
 
-namespace details {
 class FEngine;
 class FMaterial;
-} // namespace details
 
 class Engine;
 
@@ -116,16 +114,19 @@ public:
          */
         Material* build(Engine& engine);
     private:
-        friend class details::FMaterial;
+        friend class FMaterial;
     };
 
     /**
      * Creates a new instance of this material. Material instances should be freed using
      * Engine::destroy(const MaterialInstance*).
      *
+     * @param name Optional name to associate with the given material instance. If this is null,
+     * then the instance inherits the material's name.
+     *
      * @return A pointer to the new instance.
      */
-    MaterialInstance* createInstance() const noexcept;
+    MaterialInstance* createInstance(const char* name = nullptr) const noexcept;
 
     //! Returns the name of this material as a null-terminated string.
     const char* getName() const noexcept;
@@ -153,13 +154,13 @@ public:
     //! This value only makes sense when the blending mode is transparent or fade.
     TransparencyMode getTransparencyMode() const noexcept;
 
-    //! Indicates whether this material will write to the color buffer.
+    //! Indicates whether instances of this material will, by default, write to the color buffer.
     bool isColorWriteEnabled() const noexcept;
 
-    //! Indicates whether this material will write to the depth buffer.
+    //! Indicates whether instances of this material will, by default, write to the depth buffer.
     bool isDepthWriteEnabled() const noexcept;
 
-    //! Indicates whether this material will use depth testing.
+    //! Indicates whether instances of this material will, by default, use depth testing.
     bool isDepthCullingEnabled() const noexcept;
 
     //! Indicates whether this material is double-sided.
@@ -209,6 +210,9 @@ public:
 
     //! Indicates whether a parameter of the given name exists on this material.
     bool hasParameter(const char* name) const noexcept;
+
+    //! Indicates whether an existing parameter is a sampler or not.
+    bool isSampler(const char* name) const noexcept;
 
     /**
      * Sets the value of the given parameter on this material's default instance.

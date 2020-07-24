@@ -32,6 +32,7 @@
 
 #include <utils/Panic.h>
 
+#include <atomic>
 #include <condition_variable>
 #include <memory>
 #include <vector>
@@ -40,17 +41,36 @@ namespace filament {
 namespace backend {
 namespace metal {
 
-struct MetalSwapChain : public HwSwapChain {
-    MetalSwapChain(id<MTLDevice> device, CAMetalLayer* nativeWindow);
+class MetalSwapChain : public HwSwapChain {
+public:
+
+    MetalSwapChain(id<MTLDevice> device, CAMetalLayer* nativeWindow, uint64_t flags);
 
     // Instantiate a headless SwapChain.
-    MetalSwapChain(int32_t width, int32_t height);
+    MetalSwapChain(int32_t width, int32_t height, uint64_t flags);
 
-    bool isHeadless() { return layer == nullptr; }
+    bool isHeadless() const { return layer == nullptr; }
+    CAMetalLayer* getLayer() const { return layer; }
 
+    NSUInteger getSurfaceWidth() const {
+        if (isHeadless()) {
+            return headlessWidth;
+        }
+        return (NSUInteger) layer.drawableSize.width;
+    }
+
+    NSUInteger getSurfaceHeight() const {
+        if (isHeadless()) {
+            return headlessHeight;
+        }
+        return (NSUInteger) layer.drawableSize.height;
+    }
+
+private:
+
+    NSUInteger headlessWidth;
+    NSUInteger headlessHeight;
     CAMetalLayer* layer = nullptr;
-    NSUInteger surfaceWidth = 0;
-    NSUInteger surfaceHeight = 0;
 };
 
 struct MetalVertexBuffer : public HwVertexBuffer {
@@ -98,18 +118,21 @@ struct MetalProgram : public HwProgram {
 };
 
 struct MetalTexture : public HwTexture {
-    MetalTexture(MetalContext& context, backend::SamplerType target, uint8_t levels,
-            TextureFormat format, uint8_t samples, uint32_t width, uint32_t height, uint32_t depth,
-            TextureUsage usage) noexcept;
+    MetalTexture(MetalContext& context, SamplerType target, uint8_t levels, TextureFormat format,
+            uint8_t samples, uint32_t width, uint32_t height, uint32_t depth, TextureUsage usage)
+            noexcept;
     ~MetalTexture();
 
     void load2DImage(uint32_t level, uint32_t xoffset, uint32_t yoffset, uint32_t width,
-            uint32_t height, PixelBufferDescriptor&& p) noexcept;
-    void loadCubeImage(const FaceOffsets& faceOffsets, int miplevel, PixelBufferDescriptor&& p);
-    void loadSlice(uint32_t level, uint32_t xoffset, uint32_t yoffset, uint32_t width,
-            uint32_t height, uint32_t byteOffset, uint32_t slice,
+            uint32_t height, PixelBufferDescriptor& p) noexcept;
+    void load3DImage(uint32_t level, uint32_t xoffset, uint32_t yoffset, uint32_t zoffset,
+            uint32_t width, uint32_t height, uint32_t depth, PixelBufferDescriptor& p) noexcept;
+    void loadCubeImage(const FaceOffsets& faceOffsets, int miplevel, PixelBufferDescriptor& p);
+    void loadSlice(uint32_t level, uint32_t xoffset, uint32_t yoffset, uint32_t zoffset,
+            uint32_t width, uint32_t height, uint32_t depth, uint32_t byteOffset, uint32_t slice,
             PixelBufferDescriptor& data, id<MTLBlitCommandEncoder> blitCommandEncoder,
             id<MTLCommandBuffer> blitCommandBuffer) noexcept;
+    void updateLodRange(uint32_t level);
 
     MetalContext& context;
     MetalExternalImage externalImage;
@@ -119,6 +142,8 @@ struct MetalTexture : public HwTexture {
     uint8_t blockHeight; // The number of vertical pixels per block (only for compressed texture formats).
     TextureReshaper reshaper;
     MTLPixelFormat metalPixelFormat;
+    uint32_t minLod = UINT_MAX;
+    uint32_t maxLod = 0;
 };
 
 struct MetalSamplerGroup : public HwSamplerGroup {
@@ -127,59 +152,95 @@ struct MetalSamplerGroup : public HwSamplerGroup {
 
 class MetalRenderTarget : public HwRenderTarget {
 public:
+
+    struct Attachment {
+        id<MTLTexture> texture = nil;
+        uint8_t level = 0;
+        uint16_t layer = 0;
+
+        explicit operator bool() const {
+            return texture != nil;
+        }
+    };
+
     MetalRenderTarget(MetalContext* context, uint32_t width, uint32_t height, uint8_t samples,
-            id<MTLTexture> color, id<MTLTexture> depth, uint8_t colorLevel, uint8_t depthLevel);
+            Attachment colorAttachments[4], Attachment depthAttachment);
     explicit MetalRenderTarget(MetalContext* context)
             : HwRenderTarget(0, 0), context(context), defaultRenderTarget(true) {}
 
+    void setUpRenderPassAttachments(MTLRenderPassDescriptor* descriptor, const RenderPassParams& params);
+
     bool isDefaultRenderTarget() const { return defaultRenderTarget; }
     uint8_t getSamples() const { return samples; }
-    MTLLoadAction getLoadAction(const RenderPassParams& params, TargetBufferFlags buffer);
-    MTLStoreAction getStoreAction(const RenderPassParams& params, TargetBufferFlags buffer);
 
-    id<MTLTexture> getColor();
-    id<MTLTexture> getColorResolve();
-    id<MTLTexture> getDepth();
-    id<MTLTexture> getDepthResolve();
-    id<MTLTexture> getBlitColorSource();
-    id<MTLTexture> getBlitDepthSource();
-    uint8_t getColorLevel() { return colorLevel; }
-    uint8_t getDepthLevel() { return depthLevel; }
+    Attachment getColorAttachment(size_t index);
+    Attachment getDepthAttachment();
 
 private:
+
+    static MTLLoadAction getLoadAction(const RenderPassParams& params, TargetBufferFlags buffer);
+    static MTLStoreAction getStoreAction(const RenderPassParams& params, TargetBufferFlags buffer);
     static id<MTLTexture> createMultisampledTexture(id<MTLDevice> device, MTLPixelFormat format,
             uint32_t width, uint32_t height, uint8_t samples);
 
     MetalContext* context;
     bool defaultRenderTarget = false;
     uint8_t samples = 1;
-    uint8_t colorLevel = 0;
-    uint8_t depthLevel = 0;
 
-    id<MTLTexture> color = nil;
-    id<MTLTexture> depth = nil;
-    id<MTLTexture> multisampledColor = nil;
+    Attachment color[4] = {};
+    Attachment depth = {};
+
+    // "Sidecar" textures used to implement automatic MSAA resolve.
+    id<MTLTexture> multisampledColor[4] = { 0 };
     id<MTLTexture> multisampledDepth = nil;
 };
 
 class MetalFence : public HwFence {
 public:
 
+    // MetalFence is special, as it gets constructed on the Filament thread. We must delay inserting
+    // the fence into the command stream until encode() is called (on the driver thread).
     MetalFence(MetalContext& context);
+
+    // Inserts this fence into the current command buffer. Must be called from the driver thread.
+    void encode();
 
     FenceStatus wait(uint64_t timeoutNs);
 
+    API_AVAILABLE(macos(10.14), ios(12.0))
+    typedef void (^MetalFenceSignalBlock)(id<MTLSharedEvent>, uint64_t value);
+
+    API_AVAILABLE(macos(10.14), ios(12.0))
+    void onSignal(MetalFenceSignalBlock block);
+
 private:
 
-    std::shared_ptr<std::condition_variable> cv;
-    std::mutex mutex;
+    MetalContext& context;
+
+    struct State {
+        FenceStatus status { FenceStatus::TIMEOUT_EXPIRED };
+        std::condition_variable cv;
+        std::mutex mutex;
+    };
+    std::shared_ptr<State> state { std::make_shared<State>() };
 
     // MTLSharedEvent is only available on macOS 10.14 and iOS 12.0 and above.
     // The availability annotation ensures we wrap all usages of event in an @availability check.
     API_AVAILABLE(macos(10.14), ios(12.0))
-    id<MTLSharedEvent> event;
+    id<MTLSharedEvent> event = nil;
 
     uint64_t value;
+};
+
+struct MetalTimerQuery : public HwTimerQuery {
+    MetalTimerQuery() : status(std::make_shared<Status>()) {}
+
+    struct Status {
+        std::atomic<bool> available {false};
+        uint64_t elapsed {0};   // only valid if available is true
+    };
+
+    std::shared_ptr<Status> status;
 };
 
 } // namespace metal

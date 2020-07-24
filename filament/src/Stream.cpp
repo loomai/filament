@@ -29,7 +29,6 @@
 
 namespace filament {
 
-using namespace details;
 using namespace backend;
 
 struct Stream::BuilderDetails {
@@ -69,7 +68,6 @@ Stream::Builder& Stream::Builder::height(uint32_t height) noexcept {
 }
 
 Stream* Stream::Builder::build(Engine& engine) {
-    FEngine::assertValid(engine, __PRETTY_FUNCTION__);
     if (!ASSERT_PRECONDITION_NON_FATAL(!mImpl->mStream || !mImpl->mExternalTextureId,
             "One and only one of the stream or external texture can be specified")) {
         return nullptr;
@@ -79,8 +77,6 @@ Stream* Stream::Builder::build(Engine& engine) {
 }
 
 // ------------------------------------------------------------------------------------------------
-
-namespace details {
 
 FStream::FStream(FEngine& engine, const Builder& builder) noexcept
         : mEngine(engine),
@@ -151,14 +147,9 @@ int64_t FStream::getTimestamp() const noexcept {
     return driver.getStreamTimestamp(mStreamHandle);
 }
 
-
-} // namespace details
-
 // ------------------------------------------------------------------------------------------------
 // Trampoline calling into private implementation
 // ------------------------------------------------------------------------------------------------
-
-using namespace details;
 
 StreamType Stream::getStreamType() const noexcept {
     return upcast(this)->getStreamType();

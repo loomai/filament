@@ -37,18 +37,19 @@ public:
     ShaderGenerator(
             MaterialBuilder::PropertyList const& properties,
             MaterialBuilder::VariableList const& variables,
+            MaterialBuilder::PreprocessorDefineList const& defines,
             utils::CString const& materialCode,
             size_t lineOffset,
             utils::CString const& materialVertexCode,
             size_t vertexLineOffset,
             MaterialBuilder::MaterialDomain materialDomain) noexcept;
 
-    const std::string createVertexProgram(filament::backend::ShaderModel sm,
+    std::string createVertexProgram(filament::backend::ShaderModel sm,
             MaterialBuilder::TargetApi targetApi, MaterialBuilder::TargetLanguage targetLanguage,
             MaterialInfo const& material, uint8_t variantKey,
             filament::Interpolation interpolation,
             filament::VertexDomain vertexDomain) const noexcept;
-    const std::string createFragmentProgram(filament::backend::ShaderModel sm,
+    std::string createFragmentProgram(filament::backend::ShaderModel sm,
             MaterialBuilder::TargetApi targetApi, MaterialBuilder::TargetLanguage targetLanguage,
             MaterialInfo const& material, uint8_t variantKey,
             filament::Interpolation interpolation) const noexcept;
@@ -67,12 +68,12 @@ public:
 
 private:
 
-    const std::string createPostProcessVertexProgram(filament::backend::ShaderModel sm,
+    std::string createPostProcessVertexProgram(filament::backend::ShaderModel sm,
             MaterialBuilder::TargetApi targetApi, MaterialBuilder::TargetLanguage targetLanguage,
             MaterialInfo const& material, uint8_t variant,
             const filament::SamplerBindingMap& samplerBindingMap) const noexcept;
 
-    const std::string createPostProcessFragmentProgram(filament::backend::ShaderModel sm,
+    std::string createPostProcessFragmentProgram(filament::backend::ShaderModel sm,
             MaterialBuilder::TargetApi targetApi, MaterialBuilder::TargetLanguage targetLanguage,
             MaterialInfo const& material, uint8_t variant,
             const filament::SamplerBindingMap& samplerBindingMap) const noexcept;
@@ -80,6 +81,7 @@ private:
     MaterialBuilder::PropertyList mProperties;
     MaterialBuilder::VariableList mVariables;
     MaterialBuilder::MaterialDomain mMaterialDomain;
+    MaterialBuilder::PreprocessorDefineList mDefines;
     utils::CString mMaterialCode;
     utils::CString mMaterialVertexCode;
     size_t mMaterialLineOffset;

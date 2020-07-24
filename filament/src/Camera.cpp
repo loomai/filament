@@ -25,12 +25,12 @@
 #include <utils/Panic.h>
 
 #include <math/scalar.h>
+#include <filament/Exposure.h>
 
 using namespace filament::math;
 using namespace utils;
 
 namespace filament {
-namespace details {
 
 static constexpr const float MIN_APERTURE = 0.5f;
 static constexpr const float MAX_APERTURE = 64.0f;
@@ -58,11 +58,11 @@ void UTILS_NOINLINE FCamera::setProjection(double fov, double aspect, double nea
     FCamera::setProjection(Projection::PERSPECTIVE, -w, w, -h, h, near, far);
 }
 
-void FCamera::setLensProjection(double focalLength, double near, double far) noexcept {
-    // a 35mm camera has a 36mm wide frame size
-    double theta = 2.0 * std::atan(36.0 / (2.0 * focalLength));
-    // a 35mm camera has a 24mm tall frame size
-    FCamera::setProjection(theta, 36.0 / 24.0, near, far, Fov::HORIZONTAL);
+void FCamera::setLensProjection(double focalLength, double aspect, double near, double far) noexcept {
+    // a 35mm camera has a 36x24mm wide frame size
+    double theta = 2.0 * std::atan(SENSOR_SIZE * 1000.0f / (2.0 * focalLength));
+    theta *= 180.0 / math::F_PI;
+    FCamera::setProjection(theta, aspect, near, far, Fov::VERTICAL);
 }
 
 /*
@@ -157,6 +157,10 @@ void UTILS_NOINLINE FCamera::setProjection(Camera::Projection projection,
     mFar = float(far);
 }
 
+void FCamera::setScaling(math::double4 const& scaling) noexcept {
+    mScaling = scaling;
+}
+
 void UTILS_NOINLINE FCamera::setModelMatrix(const mat4f& modelMatrix) noexcept {
     FTransformManager& transformManager = mEngine.getTransformManager();
     transformManager.setTransform(transformManager.getInstance(mEntity), modelMatrix);
@@ -177,7 +181,7 @@ mat4f UTILS_NOINLINE FCamera::getViewMatrix() const noexcept {
 
 Frustum FCamera::getFrustum() const noexcept {
     // for culling purposes we keep the far plane where it is
-    return FCamera::getFrustum(mProjectionForCulling, getViewMatrix());
+    return FCamera::getFrustum(getCullingProjectionMatrix(), getViewMatrix());
 }
 
 void FCamera::setExposure(float aperture, float shutterSpeed, float sensitivity) noexcept {
@@ -224,30 +228,55 @@ math::details::TMat44<T> inverseProjection(const math::details::TMat44<T>& p) no
     return r;
 }
 
-
 UTILS_NOINLINE
 mat4f FCamera::getViewMatrix(mat4f const& model) noexcept {
-    return FCamera::rigidTransformInverse(model);
+    // We can't use rigidTransformInverse here. The camera's model matrix might have scaling, which
+    // would make it non-rigid.
+    return inverse(model);
 }
 
 Frustum FCamera::getFrustum(mat4 const& projection, mat4f const& viewMatrix) noexcept {
     return Frustum(mat4f{ projection * viewMatrix });
 }
 
+// ------------------------------------------------------------------------------------------------
 
-} // namespace details
+CameraInfo::CameraInfo(FCamera const& camera) noexcept {
+    projection         = mat4f{ camera.getProjectionMatrix() };
+    cullingProjection  = mat4f{ camera.getCullingProjectionMatrix() };
+    model              = camera.getModelMatrix();
+    view               = camera.getViewMatrix();
+    zn                 = camera.getNear();
+    zf                 = camera.getCullingFar();
+    ev100              = Exposure::ev100(camera);
+    f                  = (FCamera::SENSOR_SIZE * (float)projection[1][1]) * 0.5f;
+    A                  = f / camera.getAperture();
+}
+
+CameraInfo::CameraInfo(FCamera const& camera, const math::mat4f& worldOriginCamera) noexcept {
+    const mat4f modelMatrix{ worldOriginCamera * camera.getModelMatrix() };
+    projection         = mat4f{ camera.getProjectionMatrix() };
+    cullingProjection  = mat4f{ camera.getCullingProjectionMatrix() };
+    model              = modelMatrix;
+    view               = FCamera::getViewMatrix(model);
+    zn                 = camera.getNear();
+    zf                 = camera.getCullingFar();
+    ev100              = Exposure::ev100(camera);
+    f                  = (FCamera::SENSOR_SIZE * (float)projection[1][1]) * 0.5f;
+    A                  = f / camera.getAperture();
+    worldOffset        = camera.getPosition();
+    worldOrigin        = worldOriginCamera;
+}
 
 // ------------------------------------------------------------------------------------------------
 // Trampoline calling into private implementation
 // ------------------------------------------------------------------------------------------------
 
-using namespace details;
-
 mat4f Camera::inverseProjection(const mat4f& p) noexcept {
-    return details::inverseProjection(p);
+    return filament::inverseProjection(p);
 }
-mat4  Camera::inverseProjection(const mat4 & p) noexcept {
-    return details::inverseProjection(p);
+mat4 Camera::inverseProjection(const mat4 & p) noexcept {
+    return filament::inverseProjection(p);
 }
 
 void Camera::setProjection(Camera::Projection projection, double left, double right, double bottom,
@@ -260,20 +289,28 @@ void Camera::setProjection(double fov, double aspect, double near, double far,
     upcast(this)->setProjection(fov, aspect, near, far, direction);
 }
 
-void Camera::setLensProjection(double focalLength, double near, double far) noexcept {
-    upcast(this)->setLensProjection(focalLength, near, far);
+void Camera::setLensProjection(double focalLength, double aspect, double near, double far) noexcept {
+    upcast(this)->setLensProjection(focalLength, aspect, near, far);
 }
 
 void Camera::setCustomProjection(mat4 const& projection, double near, double far) noexcept {
     upcast(this)->setCustomProjection(projection, near, far);
 }
 
-const mat4& Camera::getProjectionMatrix() const noexcept {
+void Camera::setScaling(math::double4 const& scaling) noexcept {
+    upcast(this)->setScaling(scaling);
+}
+
+const mat4 Camera::getProjectionMatrix() const noexcept {
     return upcast(this)->getProjectionMatrix();
 }
 
-const mat4& Camera::getCullingProjectionMatrix() const noexcept {
+const mat4 Camera::getCullingProjectionMatrix() const noexcept {
     return upcast(this)->getCullingProjectionMatrix();
+}
+
+const math::double4& Camera::getScaling() const noexcept {
+    return upcast(this)->getScaling();
 }
 
 float Camera::getNear() const noexcept {
@@ -290,6 +327,10 @@ void Camera::setModelMatrix(const mat4f& modelMatrix) noexcept {
 
 void Camera::lookAt(const float3& eye, const float3& center, float3 const& up) noexcept {
     upcast(this)->lookAt(eye, center, up);
+}
+
+void Camera::lookAt(const float3& eye, const float3& center) noexcept {
+    upcast(this)->lookAt(eye, center, {0, 1, 0});
 }
 
 mat4f Camera::getModelMatrix() const noexcept {
@@ -314,6 +355,10 @@ float3 Camera::getUpVector() const noexcept {
 
 float3 Camera::getForwardVector() const noexcept {
     return upcast(this)->getForwardVector();
+}
+
+float Camera::getFieldOfViewInDegrees(Camera::Fov direction) const noexcept {
+    return upcast(this)->getFieldOfViewInDegrees(direction);
 }
 
 Frustum Camera::getFrustum() const noexcept {

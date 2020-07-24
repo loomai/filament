@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.6)
 
+option(FILAMENT_ENABLE_MATDBG "Enables Material debugger" OFF)
+
 set(FILAMENT_DIR ${FILAMENT_DIST_DIR})
 
 set(FILAMAT_FLAVOR "filamat")
 if(FILAMAT_LITE)
     set(FILAMAT_FLAVOR "filamat_lite")
+endif()
+
+if (FILAMENT_SUPPORTS_VULKAN)
+    message("Library filamat ignores Vulkan settings")
 endif()
 
 add_library(${FILAMAT_FLAVOR} STATIC IMPORTED)
@@ -29,15 +35,6 @@ set_target_properties(shaders PROPERTIES IMPORTED_LOCATION
 
 include_directories(${FILAMENT_DIR}/include)
 
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-protector")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-rtti")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math -ffp-contract=fast")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fvisibility-inlines-hidden")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fvisibility=hidden")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer -ffunction-sections -fdata-sections")
-
-set(CMAKE_SHARED_LINKER_FLAGS" ${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections")
-set(CMAKE_SHARED_LINKER_FLAGS" ${CMAKE_SHARED_LINKER_FLAGS} -Wl,-Bsymbolic-functions")
 set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,--version-script=${CMAKE_SOURCE_DIR}/libfilamat-jni.map")
 
 add_library(filamat-jni SHARED
@@ -52,4 +49,3 @@ target_link_libraries(filamat-jni
         log
         smol-v
 )
-

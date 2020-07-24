@@ -18,6 +18,8 @@
 
 #include <filament/Camera.h>
 
+#include <math/mat4.h>
+
 using namespace filament;
 
 extern "C" JNIEXPORT void JNICALL
@@ -38,9 +40,9 @@ Java_com_google_android_filament_Camera_nSetProjectionFov(JNIEnv*, jclass ,
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_google_android_filament_Camera_nSetLensProjection(JNIEnv*, jclass,
-        jlong nativeCamera, jdouble focalLength, jdouble near, jdouble far) {
+        jlong nativeCamera, jdouble focalLength, jdouble aspect, jdouble near, jdouble far) {
     Camera *camera = (Camera *) nativeCamera;
-    camera->setLensProjection(focalLength, near, far);
+    camera->setLensProjection(focalLength, aspect, near, far);
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -50,6 +52,15 @@ Java_com_google_android_filament_Camera_nSetCustomProjection(JNIEnv *env, jclass
     jdouble *inMatrix = env->GetDoubleArrayElements(inMatrix_, NULL);
     camera->setCustomProjection(*reinterpret_cast<const filament::math::mat4 *>(inMatrix), near, far);
     env->ReleaseDoubleArrayElements(inMatrix_, inMatrix, JNI_ABORT);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_google_android_filament_Camera_nSetScaling(JNIEnv* env, jclass,
+        jlong nativeCamera, jdoubleArray inScaling_) {
+    Camera *camera = (Camera *) nativeCamera;
+    jdouble *inScaling = env->GetDoubleArrayElements(inScaling_, NULL);
+    camera->setScaling(*reinterpret_cast<const filament::math::double4*>(inScaling));
+    env->ReleaseDoubleArrayElements(inScaling_, inScaling, JNI_ABORT);
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -89,6 +100,16 @@ Java_com_google_android_filament_Camera_nGetProjectionMatrix(JNIEnv *env, jclass
     jdouble *out = env->GetDoubleArrayElements(out_, NULL);
     const filament::math::mat4& m = camera->getProjectionMatrix();
     std::copy_n(&m[0][0], 16, out);
+    env->ReleaseDoubleArrayElements(out_, out, 0);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_google_android_filament_Camera_nGetScaling(JNIEnv *env, jclass,
+        jlong nativeCamera, jdoubleArray out_) {
+    Camera *camera = (Camera *) nativeCamera;
+    jdouble *out = env->GetDoubleArrayElements(out_, NULL);
+    const filament::math::double4& s = camera->getScaling();
+    std::copy_n(&s[0], 4, out);
     env->ReleaseDoubleArrayElements(out_, out, 0);
 }
 

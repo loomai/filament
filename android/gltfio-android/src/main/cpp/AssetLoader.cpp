@@ -19,6 +19,7 @@
 #include <filament/Engine.h>
 
 #include <utils/EntityManager.h>
+#include <utils/NameComponentManager.h>
 
 #include <gltfio/AssetLoader.h>
 #include <gltfio/MaterialProvider.h>
@@ -29,23 +30,23 @@ using namespace filament;
 using namespace gltfio;
 using namespace utils;
 
-extern void registerCallbackUtils(JNIEnv*);
-extern void registerNioUtils(JNIEnv*);
-
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_google_android_filament_gltfio_AssetLoader_nCreateAssetLoader(JNIEnv*, jclass,
         jlong nativeEngine, jlong nativeProvider, jlong nativeEntities) {
     Engine* engine = (Engine*) nativeEngine;
     MaterialProvider* materials = (MaterialProvider*) nativeProvider;
     EntityManager* entities = (EntityManager*) nativeEntities;
-    return (jlong) AssetLoader::create({engine, materials, nullptr, entities});
+    NameComponentManager* names = new NameComponentManager(*entities);
+    return (jlong) AssetLoader::create({engine, materials, names, entities});
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_google_android_filament_gltfio_AssetLoader_nDestroyAssetLoader(JNIEnv*, jclass,
         jlong nativeLoader) {
     AssetLoader* loader = (AssetLoader*) nativeLoader;
+    NameComponentManager* names = loader->getNames();
     AssetLoader::destroy(&loader);
+    delete names;
 }
 
 extern "C" JNIEXPORT jlong JNICALL
@@ -66,6 +67,27 @@ Java_com_google_android_filament_gltfio_AssetLoader_nCreateAssetFromJson(JNIEnv*
             buffer.getSize());
 }
 
+extern "C" JNIEXPORT jlong JNICALL
+Java_com_google_android_filament_gltfio_AssetLoader_nCreateInstancedAsset(JNIEnv* env, jclass,
+        jlong nativeLoader, jobject javaBuffer, jint remaining, jlongArray instances) {
+    AssetLoader* loader = (AssetLoader*) nativeLoader;
+    AutoBuffer buffer(env, javaBuffer, remaining);
+    jsize numInstances = env->GetArrayLength(instances);
+    using Handle = FilamentInstance*;
+    Handle* ptrInstances = new Handle[numInstances];
+    jlong asset = (jlong) loader->createInstancedAsset((const uint8_t *) buffer.getData(),
+            buffer.getSize(), ptrInstances, numInstances);
+    if (asset) {
+        jlong* longInstances = env->GetLongArrayElements(instances, nullptr);
+        for (jsize i = 0; i < numInstances; i++) {
+            longInstances[i] = (jlong) ptrInstances[i];
+        }
+        env->ReleaseLongArrayElements(instances, longInstances, 0);
+    }
+    delete[] ptrInstances;
+    return asset;
+}
+
 extern "C" JNIEXPORT void JNICALL
 Java_com_google_android_filament_gltfio_AssetLoader_nEnableDiagnostics(JNIEnv*, jclass,
         jlong nativeLoader, jboolean enable) {
@@ -76,7 +98,7 @@ Java_com_google_android_filament_gltfio_AssetLoader_nEnableDiagnostics(JNIEnv*, 
 extern "C" JNIEXPORT void JNICALL
 Java_com_google_android_filament_gltfio_AssetLoader_nDestroyAsset(JNIEnv*, jclass,
         jlong nativeLoader, jlong nativeAsset) {
-    AssetLoader* loader = (AssetLoader*) nativeLoader;    
+    AssetLoader* loader = (AssetLoader*) nativeLoader;
     FilamentAsset* asset = (FilamentAsset*) nativeAsset;
     loader->destroyAsset(asset);
 }

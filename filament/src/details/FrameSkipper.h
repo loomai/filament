@@ -17,12 +17,11 @@
 #ifndef TNT_FILAMENT_DETAILS_FRAMESKIPPER_H
 #define TNT_FILAMENT_DETAILS_FRAMESKIPPER_H
 
-#include "details/Fence.h"
+#include "backend/Handle.h"
 
 #include <array>
 
 namespace filament {
-namespace details {
 
 class FEngine;
 
@@ -41,12 +40,11 @@ public:
 
 private:
     FEngine& mEngine;
-    using Container = std::array<FFence*, MAX_FRAME_LATENCY>;
-    mutable Container mDelayedFences{};
+    using Container = std::array<backend::Handle<backend::HwSync>, MAX_FRAME_LATENCY>;
+    mutable Container mDelayedSyncs{};
     size_t mLast;
 };
 
-} // namespace details
 } // namespace filament
 
 #endif // TNT_FILAMENT_DETAILS_FRAMESKIPPER_H

@@ -80,13 +80,25 @@ std::string shaderFromKey(const MaterialKey& config) {
     std::string shader = "void material(inout MaterialInputs material) {\n";
 
     if (config.hasNormalTexture && !config.unlit) {
-        shader += "float2 normalUV = ${normal};\n";
+        shader += "highp float2 normalUV = ${normal};\n";
         if (config.hasTextureTransforms) {
             shader += "normalUV = (vec3(normalUV, 1.0) * materialParams.normalUvMatrix).xy;\n";
         }
         shader += R"SHADER(
             material.normal = texture(materialParams_normalMap, normalUV).xyz * 2.0 - 1.0;
             material.normal.xy *= materialParams.normalScale;
+        )SHADER";
+    }
+
+    if (config.hasClearCoat && config.hasClearCoatNormalTexture && !config.unlit) {
+        shader += "highp float2 clearCoatNormalUV = ${clearCoatNormal};\n";
+        if (config.hasTextureTransforms) {
+            shader += "clearCoatNormalUV = (vec3(clearCoatNormalUV, 1.0) * "
+                    "materialParams.clearCoatNormalUvMatrix).xy;\n";
+        }
+        shader += R"SHADER(
+            material.clearCoatNormal = texture(materialParams_clearCoatNormalMap, clearCoatNormalUV).xyz * 2.0 - 1.0;
+            material.clearCoatNormal.xy *= materialParams.clearCoatNormalScale;
         )SHADER";
     }
 
@@ -104,7 +116,7 @@ std::string shaderFromKey(const MaterialKey& config) {
     )SHADER";
 
     if (config.hasBaseColorTexture) {
-        shader += "float2 baseColorUV = ${color};\n";
+        shader += "highp float2 baseColorUV = ${color};\n";
         if (config.hasTextureTransforms) {
             shader += "baseColorUV = (vec3(baseColorUV, 1.0) * "
                     "materialParams.baseColorUvMatrix).xy;\n";
@@ -139,17 +151,17 @@ std::string shaderFromKey(const MaterialKey& config) {
             shader += R"SHADER(
                 material.glossiness = materialParams.glossinessFactor;
                 material.specularColor = materialParams.specularFactor;
-                material.emissive.rgb = materialParams.emissiveFactor.rgb;
+                material.emissive = vec4(materialParams.emissiveFactor.rgb, 0.0);
             )SHADER";
         } else {
             shader += R"SHADER(
                 material.roughness = materialParams.roughnessFactor;
                 material.metallic = materialParams.metallicFactor;
-                material.emissive.rgb = materialParams.emissiveFactor.rgb;
+                material.emissive = vec4(materialParams.emissiveFactor.rgb, 0.0);
             )SHADER";
         }
         if (config.hasMetallicRoughnessTexture) {
-            shader += "float2 metallicRoughnessUV = ${metallic};\n";
+            shader += "highp float2 metallicRoughnessUV = ${metallic};\n";
             if (config.hasTextureTransforms) {
                 shader += "metallicRoughnessUV = (vec3(metallicRoughnessUV, 1.0) * "
                         "materialParams.metallicRoughnessUvMatrix).xy;\n";
@@ -169,7 +181,7 @@ std::string shaderFromKey(const MaterialKey& config) {
             }
         }
         if (config.hasOcclusionTexture) {
-            shader += "float2 aoUV = ${ao};\n";
+            shader += "highp float2 aoUV = ${ao};\n";
             if (config.hasTextureTransforms) {
                 shader += "aoUV = (vec3(aoUV, 1.0) * materialParams.occlusionUvMatrix).xy;\n";
             }
@@ -179,15 +191,42 @@ std::string shaderFromKey(const MaterialKey& config) {
             )SHADER";
         }
         if (config.hasEmissiveTexture) {
-            shader += "float2 emissiveUV = ${emissive};\n";
+            shader += "highp float2 emissiveUV = ${emissive};\n";
             if (config.hasTextureTransforms) {
                 shader += "emissiveUV = (vec3(emissiveUV, 1.0) * "
                         "materialParams.emissiveUvMatrix).xy;\n";
             }
             shader += R"SHADER(
                 material.emissive.rgb *= texture(materialParams_emissiveMap, emissiveUV).rgb;
-                material.emissive.a = 3.0;
             )SHADER";
+        }
+        if (config.hasClearCoat) {
+            shader += R"SHADER(
+                material.clearCoat = materialParams.clearCoatFactor;
+                material.clearCoatRoughness = materialParams.clearCoatRoughnessFactor;
+            )SHADER";
+
+            if (config.hasClearCoatTexture) {
+                shader += "highp float2 clearCoatUV = ${clearCoat};\n";
+                if (config.hasTextureTransforms) {
+                    shader += "clearCoatUV = (vec3(clearCoatUV, 1.0) * "
+                            "materialParams.clearCoatUvMatrix).xy;\n";
+                }
+                shader += R"SHADER(
+                    material.clearCoat *= texture(materialParams_clearCoatMap, clearCoatUV).r;
+                )SHADER";
+            }
+
+            if (config.hasClearCoatRoughnessTexture) {
+                shader += "highp float2 clearCoatRoughnessUV = ${clearCoatRoughness};\n";
+                if (config.hasTextureTransforms) {
+                    shader += "clearCoatRoughnessUV = (vec3(clearCoatRoughnessUV, 1.0) * "
+                              "materialParams.clearCoatRoughnessUvMatrix).xy;\n";
+                }
+                shader += R"SHADER(
+                    material.clearCoatRoughness *= texture(materialParams_clearCoatRoughnessMap, clearCoatRoughnessUV).g;
+                )SHADER";
+            }
         }
     }
 
@@ -198,11 +237,11 @@ std::string shaderFromKey(const MaterialKey& config) {
 Material* createMaterial(Engine* engine, const MaterialKey& config, const UvMap& uvmap,
         const char* name) {
     std::string shader = shaderFromKey(config);
-    gltfio::details::processShaderString(&shader, uvmap, config);
+    processShaderString(&shader, uvmap, config);
     MaterialBuilder builder = MaterialBuilder()
             .name(name)
             .flipUV(false)
-            .specularAmbientOcclusion(true)
+            .specularAmbientOcclusion(MaterialBuilder::SpecularAmbientOcclusion::SIMPLE)
             .material(shader.c_str())
             .doubleSided(config.doubleSided)
             .targetApi(filamat::targetApiFromBackend(engine->getBackend()));
@@ -281,6 +320,31 @@ Material* createMaterial(Engine* engine, const MaterialKey& config, const UvMap&
         }
     }
 
+    // CLEAR COAT
+    if (config.hasClearCoat) {
+        builder.parameter(MaterialBuilder::UniformType::FLOAT, "clearCoatFactor");
+        builder.parameter(MaterialBuilder::UniformType::FLOAT, "clearCoatRoughnessFactor");
+        if (config.hasClearCoatTexture) {
+            builder.parameter(MaterialBuilder::SamplerType::SAMPLER_2D, "clearCoatMap");
+            if (config.hasTextureTransforms) {
+                builder.parameter(MaterialBuilder::UniformType::MAT3, "clearCoatUvMatrix");
+            }
+        }
+        if (config.hasClearCoatRoughnessTexture) {
+            builder.parameter(MaterialBuilder::SamplerType::SAMPLER_2D, "clearCoatRoughnessMap");
+            if (config.hasTextureTransforms) {
+                builder.parameter(MaterialBuilder::UniformType::MAT3, "clearCoatRoughnessUvMatrix");
+            }
+        }
+        if (config.hasClearCoatNormalTexture) {
+            builder.parameter(MaterialBuilder::UniformType::FLOAT, "clearCoatNormalScale");
+            builder.parameter(MaterialBuilder::SamplerType::SAMPLER_2D, "clearCoatNormalMap");
+            if (config.hasTextureTransforms) {
+                builder.parameter(MaterialBuilder::UniformType::MAT3, "clearCoatNormalUvMatrix");
+            }
+        }
+    }
+
     switch (config.alphaMode) {
         case AlphaMode::OPAQUE:
             builder.blending(MaterialBuilder::BlendingMode::OPAQUE);
@@ -311,15 +375,15 @@ Material* createMaterial(Engine* engine, const MaterialKey& config, const UvMap&
 
 MaterialInstance* MaterialGenerator::createMaterialInstance(MaterialKey* config, UvMap* uvmap,
         const char* label) {
-    gltfio::details::constrainMaterial(config, uvmap);
+    constrainMaterial(config, uvmap);
     auto iter = mCache.find(*config);
     if (iter == mCache.end()) {
         Material* mat = createMaterial(mEngine, *config, *uvmap, label);
         mCache.emplace(std::make_pair(*config, mat));
         mMaterials.push_back(mat);
-        return mat->createInstance();
+        return mat->createInstance(label);
     }
-    return iter->second->createInstance();
+    return iter->second->createInstance(label);
 }
 
 } // anonymous namespace
